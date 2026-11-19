@@ -1,0 +1,5 @@
+tablename,policyname,permissive,roles,cmd,qual,with_check
+bookings,anon can insert bookings,PERMISSIVE,{anon},INSERT,null,true
+bookings,staff full access,PERMISSIVE,{authenticated},ALL,true,true
+therapists,staff all therapists,PERMISSIVE,{authenticated},ALL,true,true
+therapist_days,staff all therapist_days,PERMISSIVE,{authenticated},ALL,true,true

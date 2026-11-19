@@ -1,0 +1,39 @@
+table_name,column_name,data_type,is_nullable,column_default
+bookings,id,uuid,NO,gen_random_uuid()
+bookings,created_at,timestamp with time zone,NO,now()
+bookings,kind,text,NO,'booking'::text
+bookings,status,text,NO,'confirmed'::text
+bookings,ref,text,YES,null
+bookings,loc_id,text,NO,null
+bookings,loc_name,text,YES,null
+bookings,service_id,text,YES,null
+bookings,service_name,text,YES,null
+bookings,duration,integer,NO,null
+bookings,price,integer,NO,0
+bookings,date,date,NO,null
+bookings,start_min,integer,NO,null
+bookings,end_min,integer,NO,null
+bookings,room_no,integer,NO,1
+bookings,name,text,YES,null
+bookings,phone,text,YES,null
+bookings,notes,text,YES,'None'::text
+bookings,source,text,NO,'online'::text
+bookings,created_by,text,YES,null
+bookings,token,text,YES,null
+bookings,expires_at,timestamp with time zone,YES,null
+bookings,therapist_id,uuid,YES,null
+bookings,therapist_name,text,YES,null
+therapist_days,id,uuid,NO,gen_random_uuid()
+therapist_days,therapist_id,uuid,NO,null
+therapist_days,loc_id,text,NO,null
+therapist_days,date,date,NO,null
+therapist_days,arrival_min,integer,NO,null
+therapist_days,shift_end_min,integer,YES,null
+therapist_days,on_leave,boolean,NO,false
+therapist_days,seq,integer,NO,0
+therapist_days,created_at,timestamp with time zone,NO,now()
+therapists,id,uuid,NO,gen_random_uuid()
+therapists,loc_id,text,NO,null
+therapists,name,text,NO,null
+therapists,active,boolean,NO,true
+therapists,created_at,timestamp with time zone,NO,now()

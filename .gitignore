@@ -1,0 +1,11 @@
+.DS_Store
+node_modules/
+dist/
+
+# Local environment files (never commit real values). .env.example is the template.
+.env
+.env.*
+!.env.example
+
+# Client-supplied source material (large binaries) stays on disk only
+client_inputs/*.pdf

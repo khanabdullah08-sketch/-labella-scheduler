@@ -1,0 +1,1288 @@
+function_name,definition
+gbtreekey4_in,"CREATE OR REPLACE FUNCTION public.gbtreekey4_in(cstring)
+ RETURNS gbtreekey4
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbtreekey_in$function$
+"
+gbtreekey4_out,"CREATE OR REPLACE FUNCTION public.gbtreekey4_out(gbtreekey4)
+ RETURNS cstring
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbtreekey_out$function$
+"
+gbtreekey8_in,"CREATE OR REPLACE FUNCTION public.gbtreekey8_in(cstring)
+ RETURNS gbtreekey8
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbtreekey_in$function$
+"
+gbtreekey8_out,"CREATE OR REPLACE FUNCTION public.gbtreekey8_out(gbtreekey8)
+ RETURNS cstring
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbtreekey_out$function$
+"
+gbtreekey16_in,"CREATE OR REPLACE FUNCTION public.gbtreekey16_in(cstring)
+ RETURNS gbtreekey16
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbtreekey_in$function$
+"
+gbtreekey16_out,"CREATE OR REPLACE FUNCTION public.gbtreekey16_out(gbtreekey16)
+ RETURNS cstring
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbtreekey_out$function$
+"
+gbtreekey32_in,"CREATE OR REPLACE FUNCTION public.gbtreekey32_in(cstring)
+ RETURNS gbtreekey32
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbtreekey_in$function$
+"
+gbtreekey32_out,"CREATE OR REPLACE FUNCTION public.gbtreekey32_out(gbtreekey32)
+ RETURNS cstring
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbtreekey_out$function$
+"
+gbtreekey_var_in,"CREATE OR REPLACE FUNCTION public.gbtreekey_var_in(cstring)
+ RETURNS gbtreekey_var
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbtreekey_in$function$
+"
+gbtreekey_var_out,"CREATE OR REPLACE FUNCTION public.gbtreekey_var_out(gbtreekey_var)
+ RETURNS cstring
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbtreekey_out$function$
+"
+cash_dist,"CREATE OR REPLACE FUNCTION public.cash_dist(money, money)
+ RETURNS money
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$cash_dist$function$
+"
+date_dist,"CREATE OR REPLACE FUNCTION public.date_dist(date, date)
+ RETURNS integer
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$date_dist$function$
+"
+float4_dist,"CREATE OR REPLACE FUNCTION public.float4_dist(real, real)
+ RETURNS real
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$float4_dist$function$
+"
+float8_dist,"CREATE OR REPLACE FUNCTION public.float8_dist(double precision, double precision)
+ RETURNS double precision
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$float8_dist$function$
+"
+int2_dist,"CREATE OR REPLACE FUNCTION public.int2_dist(smallint, smallint)
+ RETURNS smallint
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$int2_dist$function$
+"
+int4_dist,"CREATE OR REPLACE FUNCTION public.int4_dist(integer, integer)
+ RETURNS integer
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$int4_dist$function$
+"
+int8_dist,"CREATE OR REPLACE FUNCTION public.int8_dist(bigint, bigint)
+ RETURNS bigint
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$int8_dist$function$
+"
+interval_dist,"CREATE OR REPLACE FUNCTION public.interval_dist(interval, interval)
+ RETURNS interval
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$interval_dist$function$
+"
+oid_dist,"CREATE OR REPLACE FUNCTION public.oid_dist(oid, oid)
+ RETURNS oid
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$oid_dist$function$
+"
+time_dist,"CREATE OR REPLACE FUNCTION public.time_dist(time without time zone, time without time zone)
+ RETURNS interval
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$time_dist$function$
+"
+ts_dist,"CREATE OR REPLACE FUNCTION public.ts_dist(timestamp without time zone, timestamp without time zone)
+ RETURNS interval
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$ts_dist$function$
+"
+tstz_dist,"CREATE OR REPLACE FUNCTION public.tstz_dist(timestamp with time zone, timestamp with time zone)
+ RETURNS interval
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$tstz_dist$function$
+"
+gbt_oid_consistent,"CREATE OR REPLACE FUNCTION public.gbt_oid_consistent(internal, oid, smallint, oid, internal)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_oid_consistent$function$
+"
+gbt_oid_distance,"CREATE OR REPLACE FUNCTION public.gbt_oid_distance(internal, oid, smallint, oid, internal)
+ RETURNS double precision
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_oid_distance$function$
+"
+gbt_oid_fetch,"CREATE OR REPLACE FUNCTION public.gbt_oid_fetch(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_oid_fetch$function$
+"
+gbt_oid_compress,"CREATE OR REPLACE FUNCTION public.gbt_oid_compress(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_oid_compress$function$
+"
+gbt_decompress,"CREATE OR REPLACE FUNCTION public.gbt_decompress(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_decompress$function$
+"
+gbt_var_decompress,"CREATE OR REPLACE FUNCTION public.gbt_var_decompress(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_var_decompress$function$
+"
+gbt_var_fetch,"CREATE OR REPLACE FUNCTION public.gbt_var_fetch(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_var_fetch$function$
+"
+gbt_oid_penalty,"CREATE OR REPLACE FUNCTION public.gbt_oid_penalty(internal, internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_oid_penalty$function$
+"
+gbt_oid_picksplit,"CREATE OR REPLACE FUNCTION public.gbt_oid_picksplit(internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_oid_picksplit$function$
+"
+gbt_oid_union,"CREATE OR REPLACE FUNCTION public.gbt_oid_union(internal, internal)
+ RETURNS gbtreekey8
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_oid_union$function$
+"
+gbt_oid_same,"CREATE OR REPLACE FUNCTION public.gbt_oid_same(gbtreekey8, gbtreekey8, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_oid_same$function$
+"
+gbt_int2_consistent,"CREATE OR REPLACE FUNCTION public.gbt_int2_consistent(internal, smallint, smallint, oid, internal)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_int2_consistent$function$
+"
+gbt_int2_distance,"CREATE OR REPLACE FUNCTION public.gbt_int2_distance(internal, smallint, smallint, oid, internal)
+ RETURNS double precision
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_int2_distance$function$
+"
+gbt_int2_compress,"CREATE OR REPLACE FUNCTION public.gbt_int2_compress(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_int2_compress$function$
+"
+gbt_int2_fetch,"CREATE OR REPLACE FUNCTION public.gbt_int2_fetch(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_int2_fetch$function$
+"
+gbt_int2_penalty,"CREATE OR REPLACE FUNCTION public.gbt_int2_penalty(internal, internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_int2_penalty$function$
+"
+gbt_int2_picksplit,"CREATE OR REPLACE FUNCTION public.gbt_int2_picksplit(internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_int2_picksplit$function$
+"
+gbt_int2_union,"CREATE OR REPLACE FUNCTION public.gbt_int2_union(internal, internal)
+ RETURNS gbtreekey4
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_int2_union$function$
+"
+gbt_int2_same,"CREATE OR REPLACE FUNCTION public.gbt_int2_same(gbtreekey4, gbtreekey4, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_int2_same$function$
+"
+gbt_int4_consistent,"CREATE OR REPLACE FUNCTION public.gbt_int4_consistent(internal, integer, smallint, oid, internal)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_int4_consistent$function$
+"
+gbt_int4_distance,"CREATE OR REPLACE FUNCTION public.gbt_int4_distance(internal, integer, smallint, oid, internal)
+ RETURNS double precision
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_int4_distance$function$
+"
+gbt_int4_compress,"CREATE OR REPLACE FUNCTION public.gbt_int4_compress(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_int4_compress$function$
+"
+gbt_int4_fetch,"CREATE OR REPLACE FUNCTION public.gbt_int4_fetch(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_int4_fetch$function$
+"
+gbt_int4_penalty,"CREATE OR REPLACE FUNCTION public.gbt_int4_penalty(internal, internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_int4_penalty$function$
+"
+gbt_int4_picksplit,"CREATE OR REPLACE FUNCTION public.gbt_int4_picksplit(internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_int4_picksplit$function$
+"
+gbt_int4_union,"CREATE OR REPLACE FUNCTION public.gbt_int4_union(internal, internal)
+ RETURNS gbtreekey8
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_int4_union$function$
+"
+gbt_int4_same,"CREATE OR REPLACE FUNCTION public.gbt_int4_same(gbtreekey8, gbtreekey8, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_int4_same$function$
+"
+gbt_int8_consistent,"CREATE OR REPLACE FUNCTION public.gbt_int8_consistent(internal, bigint, smallint, oid, internal)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_int8_consistent$function$
+"
+gbt_int8_distance,"CREATE OR REPLACE FUNCTION public.gbt_int8_distance(internal, bigint, smallint, oid, internal)
+ RETURNS double precision
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_int8_distance$function$
+"
+gbt_int8_compress,"CREATE OR REPLACE FUNCTION public.gbt_int8_compress(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_int8_compress$function$
+"
+gbt_int8_fetch,"CREATE OR REPLACE FUNCTION public.gbt_int8_fetch(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_int8_fetch$function$
+"
+gbt_int8_penalty,"CREATE OR REPLACE FUNCTION public.gbt_int8_penalty(internal, internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_int8_penalty$function$
+"
+gbt_int8_picksplit,"CREATE OR REPLACE FUNCTION public.gbt_int8_picksplit(internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_int8_picksplit$function$
+"
+gbt_int8_union,"CREATE OR REPLACE FUNCTION public.gbt_int8_union(internal, internal)
+ RETURNS gbtreekey16
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_int8_union$function$
+"
+gbt_int8_same,"CREATE OR REPLACE FUNCTION public.gbt_int8_same(gbtreekey16, gbtreekey16, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_int8_same$function$
+"
+gbt_float4_consistent,"CREATE OR REPLACE FUNCTION public.gbt_float4_consistent(internal, real, smallint, oid, internal)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_float4_consistent$function$
+"
+gbt_float4_distance,"CREATE OR REPLACE FUNCTION public.gbt_float4_distance(internal, real, smallint, oid, internal)
+ RETURNS double precision
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_float4_distance$function$
+"
+gbt_float4_compress,"CREATE OR REPLACE FUNCTION public.gbt_float4_compress(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_float4_compress$function$
+"
+gbt_float4_fetch,"CREATE OR REPLACE FUNCTION public.gbt_float4_fetch(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_float4_fetch$function$
+"
+gbt_float4_penalty,"CREATE OR REPLACE FUNCTION public.gbt_float4_penalty(internal, internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_float4_penalty$function$
+"
+gbt_float4_picksplit,"CREATE OR REPLACE FUNCTION public.gbt_float4_picksplit(internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_float4_picksplit$function$
+"
+gbt_float4_union,"CREATE OR REPLACE FUNCTION public.gbt_float4_union(internal, internal)
+ RETURNS gbtreekey8
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_float4_union$function$
+"
+gbt_float4_same,"CREATE OR REPLACE FUNCTION public.gbt_float4_same(gbtreekey8, gbtreekey8, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_float4_same$function$
+"
+gbt_float8_consistent,"CREATE OR REPLACE FUNCTION public.gbt_float8_consistent(internal, double precision, smallint, oid, internal)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_float8_consistent$function$
+"
+gbt_float8_distance,"CREATE OR REPLACE FUNCTION public.gbt_float8_distance(internal, double precision, smallint, oid, internal)
+ RETURNS double precision
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_float8_distance$function$
+"
+gbt_float8_compress,"CREATE OR REPLACE FUNCTION public.gbt_float8_compress(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_float8_compress$function$
+"
+gbt_float8_fetch,"CREATE OR REPLACE FUNCTION public.gbt_float8_fetch(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_float8_fetch$function$
+"
+gbt_float8_penalty,"CREATE OR REPLACE FUNCTION public.gbt_float8_penalty(internal, internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_float8_penalty$function$
+"
+gbt_float8_picksplit,"CREATE OR REPLACE FUNCTION public.gbt_float8_picksplit(internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_float8_picksplit$function$
+"
+gbt_float8_union,"CREATE OR REPLACE FUNCTION public.gbt_float8_union(internal, internal)
+ RETURNS gbtreekey16
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_float8_union$function$
+"
+gbt_float8_same,"CREATE OR REPLACE FUNCTION public.gbt_float8_same(gbtreekey16, gbtreekey16, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_float8_same$function$
+"
+gbt_ts_consistent,"CREATE OR REPLACE FUNCTION public.gbt_ts_consistent(internal, timestamp without time zone, smallint, oid, internal)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_ts_consistent$function$
+"
+gbt_ts_distance,"CREATE OR REPLACE FUNCTION public.gbt_ts_distance(internal, timestamp without time zone, smallint, oid, internal)
+ RETURNS double precision
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_ts_distance$function$
+"
+gbt_tstz_consistent,"CREATE OR REPLACE FUNCTION public.gbt_tstz_consistent(internal, timestamp with time zone, smallint, oid, internal)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_tstz_consistent$function$
+"
+gbt_tstz_distance,"CREATE OR REPLACE FUNCTION public.gbt_tstz_distance(internal, timestamp with time zone, smallint, oid, internal)
+ RETURNS double precision
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_tstz_distance$function$
+"
+gbt_ts_compress,"CREATE OR REPLACE FUNCTION public.gbt_ts_compress(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_ts_compress$function$
+"
+gbt_tstz_compress,"CREATE OR REPLACE FUNCTION public.gbt_tstz_compress(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_tstz_compress$function$
+"
+gbt_ts_fetch,"CREATE OR REPLACE FUNCTION public.gbt_ts_fetch(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_ts_fetch$function$
+"
+gbt_ts_penalty,"CREATE OR REPLACE FUNCTION public.gbt_ts_penalty(internal, internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_ts_penalty$function$
+"
+gbt_ts_picksplit,"CREATE OR REPLACE FUNCTION public.gbt_ts_picksplit(internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_ts_picksplit$function$
+"
+gbt_ts_union,"CREATE OR REPLACE FUNCTION public.gbt_ts_union(internal, internal)
+ RETURNS gbtreekey16
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_ts_union$function$
+"
+gbt_ts_same,"CREATE OR REPLACE FUNCTION public.gbt_ts_same(gbtreekey16, gbtreekey16, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_ts_same$function$
+"
+gbt_time_consistent,"CREATE OR REPLACE FUNCTION public.gbt_time_consistent(internal, time without time zone, smallint, oid, internal)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_time_consistent$function$
+"
+gbt_time_distance,"CREATE OR REPLACE FUNCTION public.gbt_time_distance(internal, time without time zone, smallint, oid, internal)
+ RETURNS double precision
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_time_distance$function$
+"
+gbt_timetz_consistent,"CREATE OR REPLACE FUNCTION public.gbt_timetz_consistent(internal, time with time zone, smallint, oid, internal)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_timetz_consistent$function$
+"
+gbt_time_compress,"CREATE OR REPLACE FUNCTION public.gbt_time_compress(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_time_compress$function$
+"
+gbt_timetz_compress,"CREATE OR REPLACE FUNCTION public.gbt_timetz_compress(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_timetz_compress$function$
+"
+gbt_time_fetch,"CREATE OR REPLACE FUNCTION public.gbt_time_fetch(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_time_fetch$function$
+"
+gbt_time_penalty,"CREATE OR REPLACE FUNCTION public.gbt_time_penalty(internal, internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_time_penalty$function$
+"
+gbt_time_picksplit,"CREATE OR REPLACE FUNCTION public.gbt_time_picksplit(internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_time_picksplit$function$
+"
+gbt_time_union,"CREATE OR REPLACE FUNCTION public.gbt_time_union(internal, internal)
+ RETURNS gbtreekey16
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_time_union$function$
+"
+gbt_time_same,"CREATE OR REPLACE FUNCTION public.gbt_time_same(gbtreekey16, gbtreekey16, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_time_same$function$
+"
+gbt_date_consistent,"CREATE OR REPLACE FUNCTION public.gbt_date_consistent(internal, date, smallint, oid, internal)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_date_consistent$function$
+"
+gbt_date_distance,"CREATE OR REPLACE FUNCTION public.gbt_date_distance(internal, date, smallint, oid, internal)
+ RETURNS double precision
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_date_distance$function$
+"
+gbt_date_compress,"CREATE OR REPLACE FUNCTION public.gbt_date_compress(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_date_compress$function$
+"
+gbt_date_fetch,"CREATE OR REPLACE FUNCTION public.gbt_date_fetch(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_date_fetch$function$
+"
+gbt_date_penalty,"CREATE OR REPLACE FUNCTION public.gbt_date_penalty(internal, internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_date_penalty$function$
+"
+gbt_date_picksplit,"CREATE OR REPLACE FUNCTION public.gbt_date_picksplit(internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_date_picksplit$function$
+"
+gbt_date_union,"CREATE OR REPLACE FUNCTION public.gbt_date_union(internal, internal)
+ RETURNS gbtreekey8
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_date_union$function$
+"
+gbt_date_same,"CREATE OR REPLACE FUNCTION public.gbt_date_same(gbtreekey8, gbtreekey8, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_date_same$function$
+"
+gbt_intv_consistent,"CREATE OR REPLACE FUNCTION public.gbt_intv_consistent(internal, interval, smallint, oid, internal)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_intv_consistent$function$
+"
+gbt_intv_distance,"CREATE OR REPLACE FUNCTION public.gbt_intv_distance(internal, interval, smallint, oid, internal)
+ RETURNS double precision
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_intv_distance$function$
+"
+gbt_intv_compress,"CREATE OR REPLACE FUNCTION public.gbt_intv_compress(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_intv_compress$function$
+"
+gbt_intv_decompress,"CREATE OR REPLACE FUNCTION public.gbt_intv_decompress(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_intv_decompress$function$
+"
+gbt_intv_fetch,"CREATE OR REPLACE FUNCTION public.gbt_intv_fetch(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_intv_fetch$function$
+"
+gbt_intv_penalty,"CREATE OR REPLACE FUNCTION public.gbt_intv_penalty(internal, internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_intv_penalty$function$
+"
+gbt_intv_picksplit,"CREATE OR REPLACE FUNCTION public.gbt_intv_picksplit(internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_intv_picksplit$function$
+"
+gbt_intv_union,"CREATE OR REPLACE FUNCTION public.gbt_intv_union(internal, internal)
+ RETURNS gbtreekey32
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_intv_union$function$
+"
+gbt_intv_same,"CREATE OR REPLACE FUNCTION public.gbt_intv_same(gbtreekey32, gbtreekey32, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_intv_same$function$
+"
+gbt_cash_consistent,"CREATE OR REPLACE FUNCTION public.gbt_cash_consistent(internal, money, smallint, oid, internal)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_cash_consistent$function$
+"
+gbt_cash_distance,"CREATE OR REPLACE FUNCTION public.gbt_cash_distance(internal, money, smallint, oid, internal)
+ RETURNS double precision
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_cash_distance$function$
+"
+gbt_cash_compress,"CREATE OR REPLACE FUNCTION public.gbt_cash_compress(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_cash_compress$function$
+"
+gbt_cash_fetch,"CREATE OR REPLACE FUNCTION public.gbt_cash_fetch(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_cash_fetch$function$
+"
+gbt_cash_penalty,"CREATE OR REPLACE FUNCTION public.gbt_cash_penalty(internal, internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_cash_penalty$function$
+"
+gbt_cash_picksplit,"CREATE OR REPLACE FUNCTION public.gbt_cash_picksplit(internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_cash_picksplit$function$
+"
+gbt_cash_union,"CREATE OR REPLACE FUNCTION public.gbt_cash_union(internal, internal)
+ RETURNS gbtreekey16
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_cash_union$function$
+"
+gbt_cash_same,"CREATE OR REPLACE FUNCTION public.gbt_cash_same(gbtreekey16, gbtreekey16, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_cash_same$function$
+"
+gbt_macad_consistent,"CREATE OR REPLACE FUNCTION public.gbt_macad_consistent(internal, macaddr, smallint, oid, internal)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_macad_consistent$function$
+"
+gbt_macad_compress,"CREATE OR REPLACE FUNCTION public.gbt_macad_compress(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_macad_compress$function$
+"
+gbt_macad_fetch,"CREATE OR REPLACE FUNCTION public.gbt_macad_fetch(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_macad_fetch$function$
+"
+gbt_macad_penalty,"CREATE OR REPLACE FUNCTION public.gbt_macad_penalty(internal, internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_macad_penalty$function$
+"
+gbt_macad_picksplit,"CREATE OR REPLACE FUNCTION public.gbt_macad_picksplit(internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_macad_picksplit$function$
+"
+gbt_macad_union,"CREATE OR REPLACE FUNCTION public.gbt_macad_union(internal, internal)
+ RETURNS gbtreekey16
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_macad_union$function$
+"
+gbt_macad_same,"CREATE OR REPLACE FUNCTION public.gbt_macad_same(gbtreekey16, gbtreekey16, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_macad_same$function$
+"
+gbt_text_consistent,"CREATE OR REPLACE FUNCTION public.gbt_text_consistent(internal, text, smallint, oid, internal)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_text_consistent$function$
+"
+gbt_bpchar_consistent,"CREATE OR REPLACE FUNCTION public.gbt_bpchar_consistent(internal, character, smallint, oid, internal)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_bpchar_consistent$function$
+"
+gbt_text_compress,"CREATE OR REPLACE FUNCTION public.gbt_text_compress(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_text_compress$function$
+"
+gbt_bpchar_compress,"CREATE OR REPLACE FUNCTION public.gbt_bpchar_compress(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_bpchar_compress$function$
+"
+gbt_text_penalty,"CREATE OR REPLACE FUNCTION public.gbt_text_penalty(internal, internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_text_penalty$function$
+"
+gbt_text_picksplit,"CREATE OR REPLACE FUNCTION public.gbt_text_picksplit(internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_text_picksplit$function$
+"
+gbt_text_union,"CREATE OR REPLACE FUNCTION public.gbt_text_union(internal, internal)
+ RETURNS gbtreekey_var
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_text_union$function$
+"
+gbt_text_same,"CREATE OR REPLACE FUNCTION public.gbt_text_same(gbtreekey_var, gbtreekey_var, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_text_same$function$
+"
+gbt_bytea_consistent,"CREATE OR REPLACE FUNCTION public.gbt_bytea_consistent(internal, bytea, smallint, oid, internal)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_bytea_consistent$function$
+"
+gbt_bytea_compress,"CREATE OR REPLACE FUNCTION public.gbt_bytea_compress(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_bytea_compress$function$
+"
+gbt_bytea_penalty,"CREATE OR REPLACE FUNCTION public.gbt_bytea_penalty(internal, internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_bytea_penalty$function$
+"
+gbt_bytea_picksplit,"CREATE OR REPLACE FUNCTION public.gbt_bytea_picksplit(internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_bytea_picksplit$function$
+"
+gbt_bytea_union,"CREATE OR REPLACE FUNCTION public.gbt_bytea_union(internal, internal)
+ RETURNS gbtreekey_var
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_bytea_union$function$
+"
+gbt_bytea_same,"CREATE OR REPLACE FUNCTION public.gbt_bytea_same(gbtreekey_var, gbtreekey_var, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_bytea_same$function$
+"
+gbt_numeric_consistent,"CREATE OR REPLACE FUNCTION public.gbt_numeric_consistent(internal, numeric, smallint, oid, internal)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_numeric_consistent$function$
+"
+gbt_numeric_compress,"CREATE OR REPLACE FUNCTION public.gbt_numeric_compress(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_numeric_compress$function$
+"
+gbt_numeric_penalty,"CREATE OR REPLACE FUNCTION public.gbt_numeric_penalty(internal, internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_numeric_penalty$function$
+"
+gbt_numeric_picksplit,"CREATE OR REPLACE FUNCTION public.gbt_numeric_picksplit(internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_numeric_picksplit$function$
+"
+gbt_numeric_union,"CREATE OR REPLACE FUNCTION public.gbt_numeric_union(internal, internal)
+ RETURNS gbtreekey_var
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_numeric_union$function$
+"
+gbt_numeric_same,"CREATE OR REPLACE FUNCTION public.gbt_numeric_same(gbtreekey_var, gbtreekey_var, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_numeric_same$function$
+"
+gbt_bit_consistent,"CREATE OR REPLACE FUNCTION public.gbt_bit_consistent(internal, bit, smallint, oid, internal)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_bit_consistent$function$
+"
+gbt_bit_compress,"CREATE OR REPLACE FUNCTION public.gbt_bit_compress(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_bit_compress$function$
+"
+gbt_bit_penalty,"CREATE OR REPLACE FUNCTION public.gbt_bit_penalty(internal, internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_bit_penalty$function$
+"
+gbt_bit_picksplit,"CREATE OR REPLACE FUNCTION public.gbt_bit_picksplit(internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_bit_picksplit$function$
+"
+gbt_bit_union,"CREATE OR REPLACE FUNCTION public.gbt_bit_union(internal, internal)
+ RETURNS gbtreekey_var
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_bit_union$function$
+"
+gbt_bit_same,"CREATE OR REPLACE FUNCTION public.gbt_bit_same(gbtreekey_var, gbtreekey_var, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_bit_same$function$
+"
+gbt_inet_consistent,"CREATE OR REPLACE FUNCTION public.gbt_inet_consistent(internal, inet, smallint, oid, internal)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_inet_consistent$function$
+"
+gbt_inet_compress,"CREATE OR REPLACE FUNCTION public.gbt_inet_compress(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_inet_compress$function$
+"
+gbt_inet_penalty,"CREATE OR REPLACE FUNCTION public.gbt_inet_penalty(internal, internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_inet_penalty$function$
+"
+gbt_inet_picksplit,"CREATE OR REPLACE FUNCTION public.gbt_inet_picksplit(internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_inet_picksplit$function$
+"
+gbt_inet_union,"CREATE OR REPLACE FUNCTION public.gbt_inet_union(internal, internal)
+ RETURNS gbtreekey16
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_inet_union$function$
+"
+gbt_inet_same,"CREATE OR REPLACE FUNCTION public.gbt_inet_same(gbtreekey16, gbtreekey16, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_inet_same$function$
+"
+gbt_uuid_consistent,"CREATE OR REPLACE FUNCTION public.gbt_uuid_consistent(internal, uuid, smallint, oid, internal)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_uuid_consistent$function$
+"
+gbt_uuid_fetch,"CREATE OR REPLACE FUNCTION public.gbt_uuid_fetch(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_uuid_fetch$function$
+"
+gbt_uuid_compress,"CREATE OR REPLACE FUNCTION public.gbt_uuid_compress(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_uuid_compress$function$
+"
+gbt_uuid_penalty,"CREATE OR REPLACE FUNCTION public.gbt_uuid_penalty(internal, internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_uuid_penalty$function$
+"
+gbt_uuid_picksplit,"CREATE OR REPLACE FUNCTION public.gbt_uuid_picksplit(internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_uuid_picksplit$function$
+"
+gbt_uuid_union,"CREATE OR REPLACE FUNCTION public.gbt_uuid_union(internal, internal)
+ RETURNS gbtreekey32
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_uuid_union$function$
+"
+gbt_uuid_same,"CREATE OR REPLACE FUNCTION public.gbt_uuid_same(gbtreekey32, gbtreekey32, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_uuid_same$function$
+"
+gbt_macad8_consistent,"CREATE OR REPLACE FUNCTION public.gbt_macad8_consistent(internal, macaddr8, smallint, oid, internal)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_macad8_consistent$function$
+"
+gbt_macad8_compress,"CREATE OR REPLACE FUNCTION public.gbt_macad8_compress(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_macad8_compress$function$
+"
+gbt_macad8_fetch,"CREATE OR REPLACE FUNCTION public.gbt_macad8_fetch(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_macad8_fetch$function$
+"
+gbt_macad8_penalty,"CREATE OR REPLACE FUNCTION public.gbt_macad8_penalty(internal, internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_macad8_penalty$function$
+"
+gbt_macad8_picksplit,"CREATE OR REPLACE FUNCTION public.gbt_macad8_picksplit(internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_macad8_picksplit$function$
+"
+gbt_macad8_union,"CREATE OR REPLACE FUNCTION public.gbt_macad8_union(internal, internal)
+ RETURNS gbtreekey16
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_macad8_union$function$
+"
+gbt_macad8_same,"CREATE OR REPLACE FUNCTION public.gbt_macad8_same(gbtreekey16, gbtreekey16, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_macad8_same$function$
+"
+gbt_enum_consistent,"CREATE OR REPLACE FUNCTION public.gbt_enum_consistent(internal, anyenum, smallint, oid, internal)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_enum_consistent$function$
+"
+gbt_enum_compress,"CREATE OR REPLACE FUNCTION public.gbt_enum_compress(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_enum_compress$function$
+"
+gbt_enum_fetch,"CREATE OR REPLACE FUNCTION public.gbt_enum_fetch(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_enum_fetch$function$
+"
+gbt_enum_penalty,"CREATE OR REPLACE FUNCTION public.gbt_enum_penalty(internal, internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_enum_penalty$function$
+"
+gbt_enum_picksplit,"CREATE OR REPLACE FUNCTION public.gbt_enum_picksplit(internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_enum_picksplit$function$
+"
+gbt_enum_union,"CREATE OR REPLACE FUNCTION public.gbt_enum_union(internal, internal)
+ RETURNS gbtreekey8
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_enum_union$function$
+"
+gbt_enum_same,"CREATE OR REPLACE FUNCTION public.gbt_enum_same(gbtreekey8, gbtreekey8, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbt_enum_same$function$
+"
+gbtreekey2_in,"CREATE OR REPLACE FUNCTION public.gbtreekey2_in(cstring)
+ RETURNS gbtreekey2
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbtreekey_in$function$
+"
+gbtreekey2_out,"CREATE OR REPLACE FUNCTION public.gbtreekey2_out(gbtreekey2)
+ RETURNS cstring
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/btree_gist', $function$gbtreekey_out$function$
+"
+gbt_bool_consistent,"CREATE OR REPLACE FUNCTION public.gbt_bool_consistent(internal, boolean, smallint, oid, internal)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE STRICT
+AS '$libdir/btree_gist', $function$gbt_bool_consistent$function$
+"
+gbt_bool_compress,"CREATE OR REPLACE FUNCTION public.gbt_bool_compress(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE STRICT
+AS '$libdir/btree_gist', $function$gbt_bool_compress$function$
+"
+gbt_bool_fetch,"CREATE OR REPLACE FUNCTION public.gbt_bool_fetch(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE STRICT
+AS '$libdir/btree_gist', $function$gbt_bool_fetch$function$
+"
+gbt_bool_penalty,"CREATE OR REPLACE FUNCTION public.gbt_bool_penalty(internal, internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE STRICT
+AS '$libdir/btree_gist', $function$gbt_bool_penalty$function$
+"
+gbt_bool_picksplit,"CREATE OR REPLACE FUNCTION public.gbt_bool_picksplit(internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE STRICT
+AS '$libdir/btree_gist', $function$gbt_bool_picksplit$function$
+"
+gbt_bool_union,"CREATE OR REPLACE FUNCTION public.gbt_bool_union(internal, internal)
+ RETURNS gbtreekey2
+ LANGUAGE c
+ IMMUTABLE STRICT
+AS '$libdir/btree_gist', $function$gbt_bool_union$function$
+"
+gbt_bool_same,"CREATE OR REPLACE FUNCTION public.gbt_bool_same(gbtreekey2, gbtreekey2, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE STRICT
+AS '$libdir/btree_gist', $function$gbt_bool_same$function$
+"
+release_hold,"CREATE OR REPLACE FUNCTION public.release_hold(p_token text)
+ RETURNS void
+ LANGUAGE sql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  delete from bookings where token = p_token and kind = 'hold';
+$function$
+"
+get_busy,"CREATE OR REPLACE FUNCTION public.get_busy(p_loc text, p_date date, p_token text DEFAULT NULL::text)
+ RETURNS TABLE(s_min integer, e_min integer, mine boolean)
+ LANGUAGE sql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  select b.start_min, b.end_min,
+         coalesce(p_token is not null and b.token = p_token, false)
+  from bookings b
+  where b.loc_id = p_loc
+    and b.date   = p_date
+    and b.status = 'confirmed'
+    and (b.kind <> 'hold' or b.expires_at > now());
+$function$
+"
+create_hold,"CREATE OR REPLACE FUNCTION public.create_hold(p_loc text, p_date date, p_start integer, p_duration integer, p_rooms integer, p_token text)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare n int;
+begin
+  if p_duration not in (50, 60, 80, 90) then return 'invalid'; end if;
+  if p_start < 690 or (p_start + p_duration) > 1380 then return 'closed'; end if;
+  if p_date < current_date or p_date > current_date + 30 then return 'baddate'; end if;
+  if p_rooms < 1 or p_rooms > 30 then return 'invalid'; end if;
+
+  delete from bookings where kind = 'hold' and expires_at < now();
+
+  for n in 1..p_rooms loop
+    begin
+      insert into bookings(kind, loc_id, date, start_min, end_min,
+                           duration, room_no, token, expires_at)
+      values('hold', p_loc, p_date, p_start, p_start + p_duration,
+             p_duration, n, p_token, now() + interval '7 minutes');
+      return 'ok';
+    exception when exclusion_violation then
+      continue;   -- that room is busy, try the next one
+    end;
+  end loop;
+  return 'full';
+end $function$
+"
+confirm_booking,"CREATE OR REPLACE FUNCTION public.confirm_booking(p_token text, p_ref text, p_loc_name text, p_service_id text, p_service_name text, p_price integer, p_name text, p_phone text, p_notes text, p_source text DEFAULT 'online'::text, p_created_by text DEFAULT NULL::text)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare hit int;
+begin
+  if p_name is null or length(trim(p_name)) < 2 then return 'badname'; end if;
+  if p_phone !~ '^[6-9][0-9]{9}$'                then return 'badphone'; end if;
+  if p_price < 0 or p_price > 50000              then return 'badprice'; end if;
+
+  update bookings set
+    kind         = 'booking',
+    ref          = left(p_ref, 20),
+    loc_name     = left(coalesce(p_loc_name, ''), 80),
+    service_id   = left(coalesce(p_service_id, ''), 20),
+    service_name = left(coalesce(p_service_name, ''), 120),
+    price        = p_price,
+    name         = left(trim(p_name), 80),
+    phone        = p_phone,
+    notes        = left(coalesce(nullif(trim(p_notes), ''), 'None'), 500),
+    source       = case when p_source in ('online','phone','walkin')
+                        then p_source else 'online' end,
+    created_by   = left(coalesce(p_created_by, ''), 80),
+    token        = null,
+    expires_at   = null
+  where token = p_token and kind = 'hold' and expires_at > now();
+
+  get diagnostics hit = row_count;
+  return case when hit = 1 then 'ok' else 'expired' end;
+end $function$
+"
+trg_therapist_day_guard,"CREATE OR REPLACE FUNCTION public.trg_therapist_day_guard()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+declare n int;
+begin
+    select count(*) into n from public.therapist_days
+     where loc_id = new.loc_id and date = new.date;
+    if n >= 20 then
+        raise exception 'Limit reached: 20 therapists per centre per day';
+    end if;
+    new.seq := n + 1;
+    return new;
+end $function$
+"
+assign_therapist,"CREATE OR REPLACE FUNCTION public.assign_therapist(p_booking_id uuid, p_therapist_id uuid)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare b record; d record;
+begin
+    select * into b from bookings where id = p_booking_id;
+    if not found then return 'no_booking'; end if;
+
+    if p_therapist_id is null then
+        update bookings set therapist_id = null, therapist_name = null where id = p_booking_id;
+        return 'ok';
+    end if;
+
+    select td.arrival_min, td.shift_end_min, td.on_leave, t.name into d
+      from therapist_days td join therapists t on t.id = td.therapist_id
+     where td.therapist_id = p_therapist_id and td.date = b.date and td.loc_id = b.loc_id;
+    if not found then return 'not_registered'; end if;
+
+    if d.on_leave                  then return 'on_leave';   end if;
+    if b.start_min < d.arrival_min then return 'not_arrived'; end if;
+    if d.shift_end_min is not null and b.end_min > d.shift_end_min then return 'shift_ended'; end if;
+
+    update bookings set therapist_id = p_therapist_id, therapist_name = d.name
+     where id = p_booking_id;
+    return 'ok';
+exception when exclusion_violation then
+    return 'busy';
+end $function$
+"
+end_shift,"CREATE OR REPLACE FUNCTION public.end_shift(p_day_id uuid, p_force boolean DEFAULT false)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare d record; m int; c int; ist timestamp;
+begin
+    select * into d from therapist_days where id = p_day_id;
+    if not found then return 'not_found'; end if;
+
+    ist := now() at time zone 'Asia/Kolkata';
+    if d.date <> ist::date then return 'not_today'; end if;
+
+    m := extract(hour from ist)::int * 60 + extract(minute from ist)::int;
+    if m <= d.arrival_min then return 'before_arrival'; end if;
+
+    select count(*) into c from bookings b
+     where b.therapist_id = d.therapist_id and b.date = d.date
+       and b.kind = 'booking' and b.status = 'confirmed' and b.end_min > m;
+    if c > 0 and not p_force then return 'has_sessions:' || c; end if;
+
+    update therapist_days set shift_end_min = m where id = p_day_id;
+    return 'ok:' || m;
+end $function$
+"
