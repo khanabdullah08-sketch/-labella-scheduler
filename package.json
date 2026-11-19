@@ -1,0 +1,13 @@
+{
+  "name": "spa-scheduler",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Multi-tenant spa booking scheduler (static site + Supabase). One codebase, one folder per client under tenants/.",
+  "type": "module",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:thalasso": "TENANT=thalasso node scripts/build.mjs",
+    "test": "node --test test/*.test.mjs"
+  }
+}

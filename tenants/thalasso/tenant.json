@@ -1,0 +1,65 @@
+{
+  "slug": "thalasso",
+  "status": "live",
+  "lang": "en",
+  "defaultMenu": "standard",
+
+  "brand": {
+    "name": "Thalasso Luxe",
+    "tagline": "Wellness & Spa Sanctuaries",
+    "themeColor": "#2c3e2c",
+    "refPrefix": "TL-",
+    "calendarProdId": "Thalasso Luxe Wellness",
+    "calendarUidDomain": "thalassoluxe",
+    "icsFilePrefix": "Thalasso_Booking_",
+    "csvFilePrefix": "thalasso_"
+  },
+
+  "colors": {
+    "brand": { "50": "#f6f8f6", "100": "#e3ebe3", "200": "#c7d7c7", "500": "#587b58", "600": "#436143", "800": "#2c3e2c", "900": "#1a261a" },
+    "sand":  { "50": "#faf8f5", "100": "#f3eee6", "200": "#e5dacf", "800": "#5a4e42" }
+  },
+
+  "seo": {
+    "title": "Book an Appointment | Thalasso Luxe Wellness & Spa, South Delhi",
+    "description": "Book your massage or spa therapy at Thalasso Luxe — Vasant Vihar, Defence Colony, Greater Kailash and MG Road Sultanpur. Open 11:30 AM to 11:00 PM daily.",
+    "ogTitle": "Thalasso Luxe Wellness & Spa — Book Online",
+    "ogDescription": "Four sanctuaries across South Delhi. Signature, therapeutic, Ayurvedic and couples therapies."
+  },
+
+  "labels": {
+    "location": "Sanctuary",
+    "locationPlural": "Sanctuaries",
+    "selectLocationTitle": "Select Your Sanctuary",
+    "selectLocationSub": "Choose a location nearest to you for your wellness experience.",
+    "serviceTitle": "Choose Therapy",
+    "serviceSub": "Select a signature treatment from our menu.",
+    "serviceSummary": "Therapy"
+  },
+
+  "locale": {
+    "currencySymbol": "₹",
+    "numberLocale": "en-IN",
+    "countryCode": "91",
+    "dialCode": "+91",
+    "phonePattern": "[6-9]\\d{9}",
+    "phoneError": "Please enter a valid 10-digit mobile number starting with 6, 7, 8 or 9.",
+    "phoneErrorStaff": "Enter a valid 10-digit mobile number."
+  },
+
+  "rules": {
+    "openMin": 690,
+    "closeMin": 1380,
+    "slotStep": 30,
+    "bufferMins": 15,
+    "leadMins": 30,
+    "holdMinutes": 7,
+    "bookingDays": 7,
+    "therapistMax": 20
+  },
+
+  "supabase": {
+    "url": "https://fkklmjntbvrvbxhhficy.supabase.co",
+    "anonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZra2xtam50YnZydmJ4aGhmaWN5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMzNTE1NTAsImV4cCI6MjEwODkyNzU1MH0.s6cCvx7mbMX0lxe7qpswRkVgTZ48uPwOlzyNnKkCay8"
+  }
+}

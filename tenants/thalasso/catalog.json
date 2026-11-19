@@ -1,0 +1,586 @@
+{
+  "branches": [
+    {
+      "id": "vv",
+      "name": "Vasant Vihar Sanctuary",
+      "shortName": "Vasant Vihar",
+      "city": "South Delhi",
+      "phone": "919220228407",
+      "address": "Building 47, 3rd Floor, Priya Community Centre Market, Basant Lok, Vasant Vihar, New Delhi 110057",
+      "rooms": 6,
+      "menu": "standard"
+    },
+    {
+      "id": "def",
+      "name": "Defence Colony Sanctuary",
+      "shortName": "Defence Colony",
+      "city": "South Delhi",
+      "phone": "918287825534",
+      "address": "D Block, above Emperos Salon, Defence Colony, New Delhi 110024",
+      "rooms": 6,
+      "menu": "standard"
+    },
+    {
+      "id": "gk",
+      "name": "Greater Kailash Sanctuary",
+      "shortName": "Greater Kailash",
+      "city": "South Delhi",
+      "phone": "919958706222",
+      "address": "2nd Floor, M-31, Block M, Greater Kailash II, New Delhi 110048",
+      "rooms": 6,
+      "menu": "standard"
+    },
+    {
+      "id": "mg",
+      "name": "MG Road Sultanpur",
+      "shortName": "MG Road Sultanpur",
+      "city": "South Delhi",
+      "phone": "919220228408",
+      "address": "Metro Pillar No. 10, 2nd Floor, Moment Building 139, opp. Mehrauli-Gurgaon Road, near Sultanpur, New Delhi 110030",
+      "rooms": 10,
+      "menu": "mg"
+    }
+  ],
+  "menus": {
+    "standard": [
+      {
+        "id": "s1",
+        "cat": "Signature",
+        "name": "Hands of Harmony (Four Hands)",
+        "desc": "Two therapists in perfect synchrony for an immersive experience.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 6500
+          },
+          {
+            "duration": 90,
+            "price": 9999
+          }
+        ]
+      },
+      {
+        "id": "s2",
+        "cat": "Signature",
+        "name": "Aqua Indulgence",
+        "desc": "Customised massage, sea salt scrub, private steam & jacuzzi.",
+        "options": [
+          {
+            "duration": 90,
+            "price": 7000
+          }
+        ]
+      },
+      {
+        "id": "s3",
+        "cat": "Therapeutic",
+        "name": "Hot Stone Realm",
+        "desc": "Warm basalt stones massaged into key body points easing stiffness.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 3799
+          },
+          {
+            "duration": 90,
+            "price": 5499
+          }
+        ]
+      },
+      {
+        "id": "s4",
+        "cat": "Therapeutic",
+        "name": "Intense Affair (Deep Tissue)",
+        "desc": "Targets deep muscle layers for athletic recovery and tension relief.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 3500
+          },
+          {
+            "duration": 90,
+            "price": 5000
+          }
+        ]
+      },
+      {
+        "id": "s5",
+        "cat": "Therapeutic",
+        "name": "Thai Balm Massage",
+        "desc": "Thai stretching with a specialised herbal balm for muscle tension.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 3699
+          }
+        ]
+      },
+      {
+        "id": "s6",
+        "cat": "Therapeutic",
+        "name": "Cocktail Bliss (Balinese)",
+        "desc": "Rhythmic Balinese massage using acupressure and kneading.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 3500
+          },
+          {
+            "duration": 90,
+            "price": 4800
+          }
+        ]
+      },
+      {
+        "id": "s17",
+        "cat": "Therapeutic",
+        "name": "Thai Traditional Stretch",
+        "desc": "Rhythmic pressure, muscle compression and deep stretching.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 3500
+          },
+          {
+            "duration": 90,
+            "price": 5000
+          }
+        ]
+      },
+      {
+        "id": "s7",
+        "cat": "Relaxation",
+        "name": "Essence of Thalasso (Aromatherapy)",
+        "desc": "Essential oils restore emotional balance and calm the mind.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 3200
+          },
+          {
+            "duration": 90,
+            "price": 4800
+          }
+        ]
+      },
+      {
+        "id": "s8",
+        "cat": "Relaxation",
+        "name": "A Balanced Affair (Swedish)",
+        "desc": "Soothing light-pressure massage promoting restful sleep.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 3000
+          },
+          {
+            "duration": 90,
+            "price": 4600
+          }
+        ]
+      },
+      {
+        "id": "s9",
+        "cat": "Ayurvedic",
+        "name": "Abhyanga Ritual",
+        "desc": "Flowing strokes with traditional herbal oils to release fatigue.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 3500
+          },
+          {
+            "duration": 90,
+            "price": 5000
+          }
+        ]
+      },
+      {
+        "id": "s10",
+        "cat": "Ayurvedic",
+        "name": "Potli Ritual",
+        "desc": "Warm therapy using pouches filled with Ayurvedic herbs.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 3799
+          },
+          {
+            "duration": 90,
+            "price": 5499
+          }
+        ]
+      },
+      {
+        "id": "s11",
+        "cat": "Targeted",
+        "name": "Tranquil Toes (Reflexology)",
+        "desc": "Reflex zones in the feet targeted for full-body healing.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 3000
+          }
+        ]
+      },
+      {
+        "id": "s12",
+        "cat": "Targeted",
+        "name": "Targeted Indulgence (2 Areas)",
+        "desc": "Focused attention on two zones (head, foot, back, etc.).",
+        "options": [
+          {
+            "duration": 50,
+            "price": 4000
+          }
+        ]
+      },
+      {
+        "id": "s13",
+        "cat": "Targeted",
+        "name": "Targeted Indulgence (4 Areas)",
+        "desc": "Deep relief for four zones: head, foot, shoulder, neck or back.",
+        "options": [
+          {
+            "duration": 80,
+            "price": 6500
+          }
+        ]
+      },
+      {
+        "id": "s14",
+        "cat": "Couples",
+        "name": "Perfectly Paired (Hot Stone Couple)",
+        "desc": "Relaxing hot stone experience designed for couples.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 8000
+          },
+          {
+            "duration": 90,
+            "price": 10000
+          }
+        ]
+      },
+      {
+        "id": "s15",
+        "cat": "Couples",
+        "name": "Signature Jacuzzi Ritual for Two",
+        "desc": "Massage, private steam bath and rejuvenating jacuzzi.",
+        "options": [
+          {
+            "duration": 90,
+            "price": 14000
+          }
+        ]
+      },
+      {
+        "id": "s16",
+        "cat": "Couples",
+        "name": "Twin Flame (Couple Massage)",
+        "desc": "Synchronised massage in a private setting with scrub / foot therapy.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 8500
+          },
+          {
+            "duration": 90,
+            "price": 12000
+          }
+        ]
+      }
+    ],
+    "mg": [
+      {
+        "id": "m1",
+        "cat": "Signature",
+        "name": "Hands of Harmony (Four Hands)",
+        "desc": "Two therapists in perfect synchrony for an immersive, luxurious experience.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 8000
+          },
+          {
+            "duration": 90,
+            "price": 12000
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "cat": "Signature",
+        "name": "Turkish Hammam",
+        "desc": "Steam, exfoliation and olive oil foam massage for purification and rejuvenation.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 5000
+          },
+          {
+            "duration": 90,
+            "price": 7000
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "cat": "Signature",
+        "name": "Aqua Indulgence",
+        "desc": "Hydro-massage, water therapy and marine rituals for a deep detox.",
+        "options": [
+          {
+            "duration": 90,
+            "price": 9000
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "cat": "Therapeutic",
+        "name": "Hot Stone Realm",
+        "desc": "Warm basalt stones massaged into key body points, easing stiffness and enhancing circulation.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 3800
+          },
+          {
+            "duration": 90,
+            "price": 5200
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "cat": "Therapeutic",
+        "name": "Intense Affair (Deep Tissue)",
+        "desc": "Targets deep muscle layers for athletic recovery and tension relief.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 4000
+          },
+          {
+            "duration": 90,
+            "price": 5500
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "cat": "Therapeutic",
+        "name": "Zen Journey (CBD)",
+        "desc": "CBD-infused oils reduce inflammation and muscular discomfort, inducing blissful zen.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 4000
+          },
+          {
+            "duration": 90,
+            "price": 5500
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "cat": "Therapeutic",
+        "name": "Athletic Indulgences",
+        "desc": "Assisted stretching, massage gun therapy and deep tissue for active body recovery.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 4500
+          },
+          {
+            "duration": 90,
+            "price": 6000
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "cat": "Therapeutic",
+        "name": "Cocktail Bliss (Balinese)",
+        "desc": "Rhythmic Balinese massage using acupressure, kneading and aromatherapy.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 3800
+          },
+          {
+            "duration": 90,
+            "price": 5200
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "cat": "Relaxation",
+        "name": "A Balanced Affair (Swedish)",
+        "desc": "A soothing light-pressure massage that calms the nervous system and promotes restful sleep.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 3800
+          },
+          {
+            "duration": 90,
+            "price": 5200
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "cat": "Relaxation",
+        "name": "Essence of Thalasso (Aromatherapy)",
+        "desc": "Essential oils restore emotional balance and calm the mind.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 3800
+          },
+          {
+            "duration": 90,
+            "price": 5200
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "cat": "Targeted",
+        "name": "Tranquil Toes (Reflexology)",
+        "desc": "Reflex zones in the feet are targeted to stimulate full-body healing.",
+        "options": [
+          {
+            "duration": 30,
+            "price": 2000
+          },
+          {
+            "duration": 45,
+            "price": 3000
+          },
+          {
+            "duration": 60,
+            "price": 3500
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "cat": "Targeted",
+        "name": "Targeted Indulgence (2 Areas)",
+        "desc": "Choose any two zones for focused attention to melt away fatigue and tension.",
+        "options": [
+          {
+            "duration": 50,
+            "price": 4000
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "cat": "Targeted",
+        "name": "Targeted Indulgence (4 Areas)",
+        "desc": "Four focus areas — head, foot, shoulder, neck, back or calves — for deep, localised relief.",
+        "options": [
+          {
+            "duration": 80,
+            "price": 6500
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "cat": "Escapes",
+        "name": "Meet Me At The Spa",
+        "desc": "A mini-retreat: soothing head massage, revitalising foot massage and a nourishing face pack.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 4500
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "cat": "Escapes",
+        "name": "Total Trance (Massage + Face Pack)",
+        "desc": "A massage of your choice followed by a soothing face pack — a head-to-toe refresh.",
+        "options": [
+          {
+            "duration": 50,
+            "price": 4000
+          },
+          {
+            "duration": 80,
+            "price": 5500
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "cat": "Couples",
+        "name": "Meet Me At The Spa (For Two)",
+        "desc": "The mini-retreat ritual enjoyed together — head massage, foot massage and face pack.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 8000
+          }
+        ]
+      },
+      {
+        "id": "m17",
+        "cat": "Couples",
+        "name": "Perfectly Paired (Hot Stone For Two)",
+        "desc": "A deeply relaxing hot stone experience for couples, friends or BFFs.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 9000
+          },
+          {
+            "duration": 75,
+            "price": 11000
+          },
+          {
+            "duration": 90,
+            "price": 13000
+          }
+        ]
+      },
+      {
+        "id": "m18",
+        "cat": "Couples",
+        "name": "Perfectly Paired Hydrotherapy Ritual For Two",
+        "desc": "A two-hour escape: full-body exfoliation, private sauna and rejuvenating hydrotherapy.",
+        "options": [
+          {
+            "duration": 120,
+            "price": 18000
+          }
+        ]
+      },
+      {
+        "id": "m19",
+        "cat": "Couples",
+        "name": "Twin Flame (Couple Massage)",
+        "desc": "A synchronised basic massage in a serene, private setting.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 10000
+          },
+          {
+            "duration": 90,
+            "price": 12000
+          }
+        ]
+      }
+    ]
+  }
+}

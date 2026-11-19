@@ -1,324 +1,44 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Book an Appointment | Thalasso Luxe Wellness &amp; Spa, South Delhi</title>
-    <meta name="description" content="Book your massage or spa therapy at Thalasso Luxe — Vasant Vihar, Defence Colony, Greater Kailash and MG Road Sultanpur. Open 11:30 AM to 11:00 PM daily.">
-    <meta name="theme-color" content="#2c3e2c">
-    <meta property="og:title" content="Thalasso Luxe Wellness &amp; Spa — Book Online">
-    <meta property="og:description" content="Four sanctuaries across South Delhi. Signature, therapeutic, Ayurvedic and couples therapies.">
-    <meta property="og:type" content="website">
-    <link rel="icon" href="favicon.ico">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        brand: { 50:'#f6f8f6',100:'#e3ebe3',200:'#c7d7c7',500:'#587b58',600:'#436143',800:'#2c3e2c',900:'#1a261a' },
-                        sand:  { 50:'#faf8f5',100:'#f3eee6',200:'#e5dacf',800:'#5a4e42' }
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        @media print { #holdBar, .no-print { display: none !important; } }
-    </style>
-</head>
-<body class="bg-sand-50 text-brand-900 font-sans min-h-screen antialiased selection:bg-brand-100 pb-12">
-
-    <!-- Top Navigation Header -->
-    <header class="sticky top-0 z-40 bg-sand-50/90 backdrop-blur-md border-b border-sand-200">
-        <div class="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <button id="backBtn" onclick="handleBackNav()" class="hidden p-2 -ml-2 rounded-full hover:bg-sand-200 text-brand-800 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                </button>
-                <div>
-                    <h1 class="font-bold text-lg tracking-wide uppercase text-brand-800">Thalasso Luxe</h1>
-                    <p class="text-xs text-brand-600 font-medium">Wellness &amp; Spa Sanctuaries</p>
-                </div>
-            </div>
-            <div class="text-xs font-semibold px-2.5 py-1 rounded-full bg-brand-100 text-brand-800">4 Sanctuaries</div>
-        </div>
-    </header>
-
-    <main class="max-w-2xl mx-auto px-4 pt-6">
-
-        <!-- Progress Steps -->
-        <div class="mb-6 flex justify-between items-center text-xs font-medium text-brand-600 border-b border-sand-200 pb-3">
-            <span id="stepLabel1" class="text-brand-800 font-bold">1. Location</span>
-            <span>&rarr;</span>
-            <span id="stepLabel2">2. Service</span>
-            <span>&rarr;</span>
-            <span id="stepLabel3">3. Time</span>
-            <span>&rarr;</span>
-            <span id="stepLabel4">4. Confirm</span>
-        </div>
-
-        <!-- STEP 1 -->
-        <section id="stepLocation" class="space-y-4">
-            <div class="mb-4">
-                <h2 class="text-xl font-bold text-brand-900">Select Your Sanctuary</h2>
-                <p class="text-sm text-sand-800">Choose a location nearest to you for your wellness experience.</p>
-            </div>
-            <div id="locationsGrid" class="grid gap-3"></div>
-        </section>
-
-        <!-- STEP 2 -->
-        <section id="stepService" class="hidden space-y-4">
-            <div>
-                <h2 class="text-xl font-bold text-brand-900">Choose Therapy</h2>
-                <p class="text-sm text-sand-800">Select a signature treatment from our menu.</p>
-            </div>
-            <div id="categoryTabs" class="flex space-x-2 overflow-x-auto no-scrollbar py-1"></div>
-            <div id="servicesList" class="space-y-3 pt-2"></div>
-        </section>
-
-        <!-- STEP 3 -->
-        <section id="stepTime" class="hidden space-y-6">
-            <div>
-                <h2 class="text-xl font-bold text-brand-900">Select Date &amp; Time</h2>
-                <p class="text-sm text-sand-800">Operating Hours: 11:30 AM – 11:00 PM daily.</p>
-            </div>
-            <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-brand-800 mb-2">Appointment Date</label>
-                <div id="dateChips" class="flex space-x-2 overflow-x-auto no-scrollbar py-1"></div>
-            </div>
-            <div id="durationNotice" class="p-3 bg-brand-50 border border-brand-200 rounded-lg text-xs text-brand-800 flex items-center justify-between">
-                <span>Selected: <strong id="selectedServiceDurationText">60 mins</strong> service</span>
-                <span class="text-brand-600 font-semibold">Capped at 11:00 PM</span>
-            </div>
-            <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-brand-800 mb-2">Available Start Slots</label>
-                <div id="timeSlotsGrid" class="grid grid-cols-3 sm:grid-cols-4 gap-2"></div>
-                <p class="text-[11px] text-sand-800 mt-2">Crossed-out times are already reserved or too close to closing.</p>
-            </div>
-            <button id="timeNextBtn" disabled onclick="goToStep(4)" class="w-full py-3.5 bg-brand-800 text-white font-semibold rounded-xl disabled:opacity-40 disabled:cursor-not-allowed hover:bg-brand-900 transition shadow-sm">
-                Continue to Guest Details
-            </button>
-        </section>
-
-        <!-- STEP 4 -->
-        <section id="stepConfirm" class="hidden space-y-5">
-            <div>
-                <h2 class="text-xl font-bold text-brand-900">Guest Information</h2>
-                <p class="text-sm text-sand-800">Please provide contact details for booking confirmation.</p>
-            </div>
-            <div class="bg-sand-100 p-4 rounded-xl border border-sand-200 space-y-2 text-sm">
-                <div class="flex justify-between border-b border-sand-200 pb-2"><span class="text-sand-800">Location:</span><span id="summaryLocation" class="font-bold text-brand-900">--</span></div>
-                <div class="flex justify-between border-b border-sand-200 pb-2"><span class="text-sand-800">Therapy:</span><span id="summaryService" class="font-bold text-brand-900">--</span></div>
-                <div class="flex justify-between border-b border-sand-200 pb-2"><span class="text-sand-800">Date &amp; Time:</span><span id="summaryDateTime" class="font-bold text-brand-900">--</span></div>
-                <div class="flex justify-between pt-1"><span class="text-sand-800">Total Payable:</span><span id="summaryPrice" class="font-extrabold text-brand-800 text-base">--</span></div>
-            </div>
-            <form id="bookingForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-brand-800 uppercase mb-1">Full Name *</label>
-                    <input type="text" id="custName" required placeholder="e.g. Rahul Sharma" class="w-full p-3 bg-white border border-sand-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none text-sm">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-brand-800 uppercase mb-1">WhatsApp Phone Number *</label>
-                    <input type="tel" id="custPhone" required inputmode="numeric" placeholder="e.g. 9876543210" class="w-full p-3 bg-white border border-sand-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none text-sm">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-brand-800 uppercase mb-1">Special Notes / Preferences</label>
-                    <textarea id="custNotes" rows="2" placeholder="e.g. Deep pressure focus on lower back" class="w-full p-3 bg-white border border-sand-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none text-sm"></textarea>
-                </div>
-                <button type="submit" class="w-full py-4 bg-emerald-700 text-white font-bold rounded-xl hover:bg-emerald-800 transition flex items-center justify-center space-x-2 shadow-md">
-                    <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.705 1.754zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
-                    <span>Confirm Booking via WhatsApp</span>
-                </button>
-            </form>
-        </section>
-
-        <!-- STEP 5 -->
-        <section id="stepSuccess" class="hidden space-y-6 text-center py-8">
-            <div class="w-16 h-16 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-            </div>
-            <div>
-                <h2 class="text-2xl font-extrabold text-brand-900">Booking Confirmed!</h2>
-                <p class="text-sm text-sand-800 mt-1">Your slot is locked in and your details have opened in WhatsApp.</p>
-            </div>
-            <div class="bg-white p-4 rounded-xl border border-sand-200 text-left space-y-2 text-xs">
-                <div class="flex justify-between"><span class="text-sand-800">Ref Code:</span><span id="succRef" class="font-mono font-bold">--</span></div>
-                <div class="flex justify-between"><span class="text-sand-800">Sanctuary:</span><span id="succLoc" class="font-bold">--</span></div>
-                <div class="flex justify-between"><span class="text-sand-800">Service:</span><span id="succService" class="font-bold">--</span></div>
-                <div class="flex justify-between"><span class="text-sand-800">Date &amp; Time:</span><span id="succTime" class="font-bold">--</span></div>
-            </div>
-            <div class="flex flex-col space-y-3">
-                <button onclick="downloadCalendarEvent()" class="w-full py-3 bg-brand-100 text-brand-800 font-semibold rounded-xl hover:bg-brand-200 transition text-sm flex items-center justify-center space-x-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                    <span>Add to Phone Calendar (.ics)</span>
-                </button>
-                <button onclick="resetApp()" class="w-full py-3 border border-sand-200 text-brand-800 font-semibold rounded-xl hover:bg-sand-100 transition text-sm">
-                    Book Another Appointment
-                </button>
-            </div>
-        </section>
-    </main>
-
-    <!-- hold countdown bar -->
-    <div id="holdBar" class="hidden fixed bottom-0 left-0 right-0 z-40 bg-amber-100 border-t border-amber-300 text-amber-900 text-xs font-bold text-center py-2.5"></div>
-
-
-    <!-- DAY VIEW CONSOLE -->
-    <div id="dvModal" class="hidden fixed inset-0 z-50 bg-sand-50 overflow-y-auto">
-        <div class="sticky top-0 bg-white border-b border-sand-200 px-4 py-3 flex flex-wrap gap-2 items-center no-print">
-            <strong class="text-brand-900 text-sm mr-1">Day View Console</strong>
-            <input id="dvDate" type="date" class="px-2 py-1.5 border border-sand-200 rounded-lg text-xs">
-            <select id="dvBranch" class="px-2 py-1.5 border border-sand-200 rounded-lg text-xs"></select>
-            <button onclick="dvLoad()" class="px-3 py-1.5 bg-brand-100 text-brand-800 rounded-lg text-xs font-semibold">Refresh</button>
-            <button onclick="dvShowAdd()" class="px-3 py-1.5 bg-emerald-100 text-emerald-800 rounded-lg text-xs font-semibold">+ Phone booking</button>
-            <button onclick="thShowAdd()" class="px-3 py-1.5 bg-indigo-100 text-indigo-800 rounded-lg text-xs font-semibold">+ Add Therapist</button>
-            <button onclick="dvCsv()" class="px-3 py-1.5 bg-brand-100 text-brand-800 rounded-lg text-xs font-semibold">Export CSV</button>
-            <button onclick="window.print()" class="px-3 py-1.5 bg-brand-100 text-brand-800 rounded-lg text-xs font-semibold">Print</button>
-            <button onclick="dvLogout()" class="px-3 py-1.5 bg-sand-100 text-sand-800 rounded-lg text-xs font-semibold">Log out</button>
-            <button onclick="dvClose()" class="ml-auto px-3 py-1.5 bg-brand-800 text-white rounded-lg text-xs font-bold">Close</button>
-        </div>
-        <div class="max-w-6xl mx-auto px-4 py-4 space-y-5">
-            <div id="dvKpi" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
-            <div id="dvAdd" class="hidden bg-white border border-emerald-200 rounded-xl p-4 space-y-3">
-                <div class="flex items-center justify-between">
-                    <strong class="text-sm text-brand-900">Add a phone / walk-in booking</strong>
-                    <button onclick="document.getElementById('dvAdd').classList.add('hidden')" class="text-xs text-sand-800">Hide</button>
-                </div>
-                <div class="grid sm:grid-cols-2 gap-3 text-xs">
-                    <select id="aLoc" class="p-2.5 border border-sand-200 rounded-lg"></select>
-                    <select id="aSrv" class="p-2.5 border border-sand-200 rounded-lg"></select>
-                    <input id="aDate" type="date" class="p-2.5 border border-sand-200 rounded-lg">
-                    <div class="flex items-center gap-2">
-                        <input id="aTime" type="time" step="300" class="p-2.5 border border-sand-200 rounded-lg flex-1">
-                        <span id="aEnds" class="text-[11px] text-sand-800 whitespace-nowrap">ends --</span>
-                    </div>
-                    <input id="aName" placeholder="Guest name" class="p-2.5 border border-sand-200 rounded-lg">
-                    <input id="aPhone" placeholder="10-digit mobile" inputmode="numeric" class="p-2.5 border border-sand-200 rounded-lg">
-                    <select id="aSource" class="p-2.5 border border-sand-200 rounded-lg">
-                        <option value="phone">Phone booking</option>
-                        <option value="walkin">Walk-in</option>
-                    </select>
-                    <input id="aNotes" placeholder="Notes (optional)" class="p-2.5 border border-sand-200 rounded-lg">
-                    <div>
-                        <select id="aTher" class="w-full p-2.5 border border-sand-200 rounded-lg"></select>
-                        <div id="aTherNote" class="text-[11px] text-sand-800 mt-1">&nbsp;</div>
-                    </div>
-                </div>
-                <button onclick="dvAddBooking(this)" class="w-full py-2.5 bg-emerald-700 text-white font-bold rounded-lg text-xs">Save booking</button>
-            </div>
-            <div class="bg-white border border-sand-200 rounded-xl p-3 overflow-x-auto">
-                <div id="dvGrid" class="min-w-max text-[11px]"></div>
-            </div>
-            <div id="thAdd" class="hidden bg-white border border-indigo-200 rounded-xl p-4 space-y-3">
-                <div class="flex items-center justify-between">
-                    <strong class="text-sm text-brand-900">Add therapist to today's roster</strong>
-                    <button onclick="document.getElementById('thAdd').classList.add('hidden')" class="text-xs text-sand-800">Hide</button>
-                </div>
-                <div class="grid sm:grid-cols-2 gap-3 text-xs">
-                    <select id="tLoc" class="p-2.5 border border-sand-200 rounded-lg"></select>
-                    <input id="tName" list="tDir" placeholder="Therapist name" class="p-2.5 border border-sand-200 rounded-lg">
-                    <datalist id="tDir"></datalist>
-                    <label class="flex items-center gap-2 sm:col-span-2">Arrival time<input id="tArr" type="time" step="300" class="flex-1 p-2.5 border border-sand-200 rounded-lg"></label>
-                </div>
-                    <p class="text-[11px] text-sand-800">Only the arrival time is needed. Shift end is logged later with the <strong>End shift</strong> button in the roster. Max 20 per centre per day — start typing to reuse a name.</p>
-                <button onclick="thSave(this)" class="w-full py-2.5 bg-indigo-700 text-white font-bold rounded-lg text-xs">Save therapist</button>
-            </div>
-            <div class="bg-white border border-sand-200 rounded-xl p-3">
-                <div class="flex items-center justify-between mb-2">
-                    <strong class="text-xs uppercase tracking-wide text-sand-800">Therapist roster</strong>
-                    <span id="thCount" class="text-[11px] text-sand-800"></span>
-                </div>
-                <div id="thGrid" class="overflow-x-auto text-[11px]"></div>
-            </div>
-            <div id="dvList" class="space-y-2"></div>
-        </div>
-    </div>
-
-<script>
 /* ============================================================
-   1. CLOUD CONFIG   —  CHANGE THE TWO LINES MARKED 👈
+   1. TENANT CONFIG
+   Injected at build time as window.APP_CONFIG (see scripts/build.mjs).
+   Nothing client-specific may be hardcoded in this file — it lives in
+   tenants/<slug>/tenant.json and tenants/<slug>/catalog.json.
    ============================================================ */
-const SUPA_URL = 'https://fkklmjntbvrvbxhhficy.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZra2xtam50YnZydmJ4aGhmaWN5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMzNTE1NTAsImV4cCI6MjEwODkyNzU1MH0.s6cCvx7mbMX0lxe7qpswRkVgTZ48uPwOlzyNnKkCay8';   // 👈 1. paste your key
+const CFG = window.APP_CONFIG;
+const RULES = CFG.rules;
 
-// Treatment rooms per branch. ASK THE CLIENT — these are guesses.
-const ROOMS = { vv: 6, def: 6, gk: 6, mg: 10 };            // 👈 2. real numbers
-
-const OPEN_MIN   = 690;    // 11:30 AM
-const CLOSE_MIN  = 1380;   // 11:00 PM
-const SLOT_STEP  = 30;
-const BUFFER_MINS = 15;    // cleaning gap between sessions
-const LEAD_MINS   = 30;    // guests must book at least 1 hour ahead
-
+const SUPA_URL = CFG.supabase.url;
+const SUPA_KEY = CFG.supabase.anonKey;
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 
-/* ============================================================
-   2. SANCTUARIES
-   ============================================================ */
-const LOCATIONS = [
-    { id: 'vv',      name: 'Vasant Vihar Sanctuary',    city: 'South Delhi', phone: '919220228407', address: 'Building 47, 3rd Floor, Priya Community Centre Market, Basant Lok, Vasant Vihar, New Delhi 110057' },
-    { id: 'def',     name: 'Defence Colony Sanctuary',  city: 'South Delhi', phone: '918287825534', address: 'D Block, above Emperos Salon, Defence Colony, New Delhi 110024' },
-    { id: 'gk',      name: 'Greater Kailash Sanctuary', city: 'South Delhi', phone: '919958706222', address: '2nd Floor, M-31, Block M, Greater Kailash II, New Delhi 110048' },
-    { id: 'mg',      name: 'MG Road Sultanpur',         city: 'South Delhi', phone: '919220228408', address: 'Metro Pillar No. 10, 2nd Floor, Moment Building 139, opp. Mehrauli-Gurgaon Road, near Sultanpur, New Delhi 110030' }
-];
+const SLOT_STEP     = RULES.slotStep;
+const BUFFER_MINS   = RULES.bufferMins;      // cleaning gap between sessions
+const LEAD_MINS     = RULES.leadMins;        // minimum notice for same-day bookings
+const HOLD_MINS     = RULES.holdMinutes;     // must match the hold length enforced in the database
+const BOOKING_DAYS  = RULES.bookingDays;     // how many days ahead guests can book
+const TH_MAX        = RULES.therapistMax;    // therapists per branch per day
 
 /* ============================================================
-   3. OFFICIAL SERVICES MENU
+   2. BRANCHES  (id, name, shortName, city, phone, address, rooms, menu,
+                 optional openMin / closeMin overriding the tenant default)
    ============================================================ */
-/* ---- Menu A: Vasant Vihar, Defence Colony, Greater Kailash ---- */
-const SERVICES_STD = [
-    { id: 's1',  cat: 'Signature',   name: 'Hands of Harmony (Four Hands)',      desc: 'Two therapists in perfect synchrony for an immersive experience.',        options: [{ duration: 60, price: 6500 }, { duration: 90, price: 9999 }] },
-    { id: 's2',  cat: 'Signature',   name: 'Aqua Indulgence',                    desc: 'Customised massage, sea salt scrub, private steam & jacuzzi.',            options: [{ duration: 90, price: 7000 }] },
-    { id: 's3',  cat: 'Therapeutic', name: 'Hot Stone Realm',                    desc: 'Warm basalt stones massaged into key body points easing stiffness.',      options: [{ duration: 60, price: 3799 }, { duration: 90, price: 5499 }] },
-    { id: 's4',  cat: 'Therapeutic', name: 'Intense Affair (Deep Tissue)',       desc: 'Targets deep muscle layers for athletic recovery and tension relief.',    options: [{ duration: 60, price: 3500 }, { duration: 90, price: 5000 }] },
-    { id: 's5',  cat: 'Therapeutic', name: 'Thai Balm Massage',                  desc: 'Thai stretching with a specialised herbal balm for muscle tension.',      options: [{ duration: 60, price: 3699 }] },
-    { id: 's6',  cat: 'Therapeutic', name: 'Cocktail Bliss (Balinese)',          desc: 'Rhythmic Balinese massage using acupressure and kneading.',               options: [{ duration: 60, price: 3500 }, { duration: 90, price: 4800 }] },
-    { id: 's17', cat: 'Therapeutic', name: 'Thai Traditional Stretch',           desc: 'Rhythmic pressure, muscle compression and deep stretching.',              options: [{ duration: 60, price: 3500 }, { duration: 90, price: 5000 }] },
-    { id: 's7',  cat: 'Relaxation',  name: 'Essence of Thalasso (Aromatherapy)', desc: 'Essential oils restore emotional balance and calm the mind.',             options: [{ duration: 60, price: 3200 }, { duration: 90, price: 4800 }] },
-    { id: 's8',  cat: 'Relaxation',  name: 'A Balanced Affair (Swedish)',        desc: 'Soothing light-pressure massage promoting restful sleep.',                options: [{ duration: 60, price: 3000 }, { duration: 90, price: 4600 }] },
-    { id: 's9',  cat: 'Ayurvedic',   name: 'Abhyanga Ritual',                    desc: 'Flowing strokes with traditional herbal oils to release fatigue.',        options: [{ duration: 60, price: 3500 }, { duration: 90, price: 5000 }] },
-    { id: 's10', cat: 'Ayurvedic',   name: 'Potli Ritual',                       desc: 'Warm therapy using pouches filled with Ayurvedic herbs.',                 options: [{ duration: 60, price: 3799 }, { duration: 90, price: 5499 }] },
-    { id: 's11', cat: 'Targeted',    name: 'Tranquil Toes (Reflexology)',        desc: 'Reflex zones in the feet targeted for full-body healing.',                options: [{ duration: 60, price: 3000 }] },
-    { id: 's12', cat: 'Targeted',    name: 'Targeted Indulgence (2 Areas)',      desc: 'Focused attention on two zones (head, foot, back, etc.).',                options: [{ duration: 50, price: 4000 }] },
-    { id: 's13', cat: 'Targeted',    name: 'Targeted Indulgence (4 Areas)',      desc: 'Deep relief for four zones: head, foot, shoulder, neck or back.',         options: [{ duration: 80, price: 6500 }] },
-    { id: 's14', cat: 'Couples',     name: 'Perfectly Paired (Hot Stone Couple)',desc: 'Relaxing hot stone experience designed for couples.',                     options: [{ duration: 60, price: 8000 }, { duration: 90, price: 10000 }] },
-    { id: 's15', cat: 'Couples',     name: 'Signature Jacuzzi Ritual for Two',   desc: 'Massage, private steam bath and rejuvenating jacuzzi.',                   options: [{ duration: 90, price: 14000 }] },
-    { id: 's16', cat: 'Couples',     name: 'Twin Flame (Couple Massage)',        desc: 'Synchronised massage in a private setting with scrub / foot therapy.',    options: [{ duration: 60, price: 8500 }, { duration: 90, price: 12000 }] }
-];
+const LOCATIONS = CFG.branches;
+const ROOMS = Object.fromEntries(LOCATIONS.map(l => [l.id, l.rooms]));
+const branchOf = id => LOCATIONS.find(l => l.id === id);
+const openOf   = id => { const b = branchOf(id); return b && b.openMin  != null ? b.openMin  : RULES.openMin; };
+const closeOf  = id => { const b = branchOf(id); return b && b.closeMin != null ? b.closeMin : RULES.closeMin; };
 
-/* ---- Menu B: MG Road Sultanpur (Wellness Realm) ---- */
-const SERVICES_MG = [
-    { id: 'm1',  cat: 'Signature',   name: 'Hands of Harmony (Four Hands)',      desc: 'Two therapists in perfect synchrony for an immersive, luxurious experience.',        options: [{ duration: 60, price: 8000 }, { duration: 90, price: 12000 }] },
-    { id: 'm2',  cat: 'Signature',   name: 'Turkish Hammam',                     desc: 'Steam, exfoliation and olive oil foam massage for purification and rejuvenation.',   options: [{ duration: 60, price: 5000 }, { duration: 90, price: 7000 }] },
-    { id: 'm3',  cat: 'Signature',   name: 'Aqua Indulgence',                    desc: 'Hydro-massage, water therapy and marine rituals for a deep detox.',                 options: [{ duration: 90, price: 9000 }] },
-    { id: 'm4',  cat: 'Therapeutic', name: 'Hot Stone Realm',                    desc: 'Warm basalt stones massaged into key body points, easing stiffness and enhancing circulation.', options: [{ duration: 60, price: 3800 }, { duration: 90, price: 5200 }] },
-    { id: 'm5',  cat: 'Therapeutic', name: 'Intense Affair (Deep Tissue)',       desc: 'Targets deep muscle layers for athletic recovery and tension relief.',              options: [{ duration: 60, price: 4000 }, { duration: 90, price: 5500 }] },
-    { id: 'm6',  cat: 'Therapeutic', name: 'Zen Journey (CBD)',                  desc: 'CBD-infused oils reduce inflammation and muscular discomfort, inducing blissful zen.', options: [{ duration: 60, price: 4000 }, { duration: 90, price: 5500 }] },
-    { id: 'm7',  cat: 'Therapeutic', name: 'Athletic Indulgences',               desc: 'Assisted stretching, massage gun therapy and deep tissue for active body recovery.', options: [{ duration: 60, price: 4500 }, { duration: 90, price: 6000 }] },
-    { id: 'm8',  cat: 'Therapeutic', name: 'Cocktail Bliss (Balinese)',          desc: 'Rhythmic Balinese massage using acupressure, kneading and aromatherapy.',           options: [{ duration: 60, price: 3800 }, { duration: 90, price: 5200 }] },
-    { id: 'm9',  cat: 'Relaxation',  name: 'A Balanced Affair (Swedish)',        desc: 'A soothing light-pressure massage that calms the nervous system and promotes restful sleep.', options: [{ duration: 60, price: 3800 }, { duration: 90, price: 5200 }] },
-    { id: 'm10', cat: 'Relaxation',  name: 'Essence of Thalasso (Aromatherapy)', desc: 'Essential oils restore emotional balance and calm the mind.',                       options: [{ duration: 60, price: 3800 }, { duration: 90, price: 5200 }] },
-    { id: 'm11', cat: 'Targeted',    name: 'Tranquil Toes (Reflexology)',        desc: 'Reflex zones in the feet are targeted to stimulate full-body healing.',             options: [{ duration: 30, price: 2000 }, { duration: 45, price: 3000 }, { duration: 60, price: 3500 }] },
-    { id: 'm12', cat: 'Targeted',    name: 'Targeted Indulgence (2 Areas)',      desc: 'Choose any two zones for focused attention to melt away fatigue and tension.',      options: [{ duration: 50, price: 4000 }] },
-    { id: 'm13', cat: 'Targeted',    name: 'Targeted Indulgence (4 Areas)',      desc: 'Four focus areas — head, foot, shoulder, neck, back or calves — for deep, localised relief.', options: [{ duration: 80, price: 6500 }] },
-    { id: 'm14', cat: 'Escapes',     name: 'Meet Me At The Spa',                 desc: 'A mini-retreat: soothing head massage, revitalising foot massage and a nourishing face pack.', options: [{ duration: 60, price: 4500 }] },
-    { id: 'm15', cat: 'Escapes',     name: 'Total Trance (Massage + Face Pack)', desc: 'A massage of your choice followed by a soothing face pack — a head-to-toe refresh.', options: [{ duration: 50, price: 4000 }, { duration: 80, price: 5500 }] },
-    { id: 'm16', cat: 'Couples',     name: 'Meet Me At The Spa (For Two)',       desc: 'The mini-retreat ritual enjoyed together — head massage, foot massage and face pack.', options: [{ duration: 60, price: 8000 }] },
-    { id: 'm17', cat: 'Couples',     name: 'Perfectly Paired (Hot Stone For Two)', desc: 'A deeply relaxing hot stone experience for couples, friends or BFFs.',             options: [{ duration: 60, price: 9000 }, { duration: 75, price: 11000 }, { duration: 90, price: 13000 }] },
-    { id: 'm18', cat: 'Couples',     name: 'Perfectly Paired Hydrotherapy Ritual For Two', desc: 'A two-hour escape: full-body exfoliation, private sauna and rejuvenating hydrotherapy.', options: [{ duration: 120, price: 18000 }] },
-    { id: 'm19', cat: 'Couples',     name: 'Twin Flame (Couple Massage)',        desc: 'A synchronised basic massage in a serene, private setting.',                        options: [{ duration: 60, price: 10000 }, { duration: 90, price: 12000 }] }
-];
-
-/* ---- Which branch gets which menu ---- */
-const MENUS = { vv: SERVICES_STD, def: SERVICES_STD, gk: SERVICES_STD, mg: SERVICES_MG };
-const menuFor = id => MENUS[id] || SERVICES_STD;
+/* ============================================================
+   3. SERVICES MENUS  (each branch points at a named menu)
+   ============================================================ */
+const MENU_LIST    = CFG.menus;
+const DEFAULT_MENU = MENU_LIST[CFG.defaultMenu];
+const MENUS   = Object.fromEntries(LOCATIONS.map(l => [l.id, MENU_LIST[l.menu]]));
+const menuFor = id => MENUS[id] || DEFAULT_MENU;
 
 /* Active menu — swapped when the guest picks a branch. Must be `let`, not `const`. */
-let SERVICES = SERVICES_STD;
+let SERVICES = DEFAULT_MENU;
+
 
 
 /* ============================================================
@@ -335,15 +55,18 @@ function minsToText(m) {
     const h = Math.floor(m / 60), mm = m % 60;
     return (h % 12 || 12) + ':' + pad2(mm) + ' ' + (h >= 12 ? 'PM' : 'AM');
 }
-const money = n => '₹' + (Number(n) || 0).toLocaleString('en-IN');
+const money = n => CFG.locale.currencySymbol + (Number(n) || 0).toLocaleString(CFG.locale.numberLocale);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const capOf = id => ROOMS[id] || 4;
 const nowMins = () => { const d = new Date(); return d.getHours() * 60 + d.getMinutes(); };
-const cleanPhone = v => String(v || '').replace(/\D/g, '').replace(/^(0091|91|0)(?=[6-9]\d{9}$)/, '');
+const PHONE_CORE = CFG.locale.phonePattern;   // e.g. [6-9]\d{9}
+const PHONE_RE = new RegExp('^' + PHONE_CORE + '$');
+const PHONE_PREFIX_RE = new RegExp('^(00' + CFG.locale.countryCode + '|' + CFG.locale.countryCode + '|0)(?=' + PHONE_CORE + '$)');
+const cleanPhone = v => String(v || '').replace(/\D/g, '').replace(PHONE_PREFIX_RE, '');
 
-/* ---- 7-minute hold countdown ---- */
+/* ---- hold countdown (length comes from tenant config) ---- */
 function startHoldCountdown() {
-    holdDeadline = Date.now() + 7 * 60 * 1000;
+    holdDeadline = Date.now() + HOLD_MINS * 60 * 1000;
     clearInterval(holdTicker);
     const bar = document.getElementById('holdBar');
     bar.classList.remove('hidden');
@@ -354,7 +77,7 @@ function startHoldCountdown() {
             clearInterval(holdTicker);
             bar.classList.add('hidden');
             holdToken = null;
-            alert('Your 7-minute hold has expired. Please choose a time again.');
+            alert('Your ' + HOLD_MINS + '-minute hold has expired. Please choose a time again.');
             goToStep(3); renderTimeSlots();
         }
     };
@@ -398,10 +121,18 @@ function renderLocations() {
             <span class="text-xs font-semibold text-brand-600 bg-brand-50 px-2.5 py-1 rounded-full whitespace-nowrap">${esc(loc.city)}</span>
         </div>`).join('');
 }
+/* Show the selected branch's own opening hours on the time step. */
+function applyHours(id) {
+    const hrs = document.getElementById('hoursText');
+    const cap = document.getElementById('capText');
+    if (hrs) hrs.innerText = 'Operating Hours: ' + minsToText(openOf(id)) + ' – ' + minsToText(closeOf(id)) + ' daily.';
+    if (cap) cap.innerText = 'Capped at ' + minsToText(closeOf(id));
+}
 async function selectLocation(id) {
     await releaseHold();
     bookingState.location = LOCATIONS.find(l => l.id === id);
     SERVICES = menuFor(id);
+    applyHours(id);
     bookingState.service = null;
     bookingState.selectedOption = null;
     bookingState.startMinutes = null;
@@ -464,12 +195,12 @@ async function selectServiceOption(serviceId, duration, price) {
 function generateDates() {
     const container = document.getElementById('dateChips');
     const dates = [], today = new Date();
-    for (let i = 0; i < 7; i++) { const d = new Date(today); d.setDate(today.getDate() + i); dates.push(d); }
+    for (let i = 0; i < BOOKING_DAYS; i++) { const d = new Date(today); d.setDate(today.getDate() + i); dates.push(d); }
 
     container.innerHTML = dates.map((d, idx) => `
         <button onclick="selectDate('${ymdLocal(d)}', this)" class="flex-shrink-0 px-4 py-2 rounded-xl border text-center transition ${idx === 0 ? 'bg-brand-800 text-white border-brand-800' : 'bg-white border-sand-200 text-brand-800 hover:border-brand-500'}">
-            <div class="text-[10px] uppercase font-semibold opacity-80">${d.toLocaleDateString('en-IN', { weekday: 'short' })}</div>
-            <div class="text-base font-extrabold">${d.getDate()} ${d.toLocaleDateString('en-IN', { month: 'short' })}</div>
+            <div class="text-[10px] uppercase font-semibold opacity-80">${d.toLocaleDateString(CFG.locale.numberLocale, { weekday: 'short' })}</div>
+            <div class="text-base font-extrabold">${d.getDate()} ${d.toLocaleDateString(CFG.locale.numberLocale, { month: 'short' })}</div>
         </button>`).join('');
 
     bookingState.date = ymdLocal(dates[0]);
@@ -496,6 +227,7 @@ async function renderTimeSlots() {
 
     const duration = bookingState.selectedOption ? bookingState.selectedOption.duration : 60;
     const capacity = capOf(bookingState.location.id);
+    const openAt = openOf(bookingState.location.id), closeAt = closeOf(bookingState.location.id);
 
     container.innerHTML = '<div class="col-span-full text-xs text-sand-800 py-4 text-center">Checking live availability…</div>';
 
@@ -515,10 +247,10 @@ async function renderTimeSlots() {
     const n = nowMins();
     const slots = [];
 
-    for (let current = OPEN_MIN; current <= CLOSE_MIN - SLOT_STEP; current += SLOT_STEP) {
+    for (let current = openAt; current <= closeAt - SLOT_STEP; current += SLOT_STEP) {
         const end = current + duration;
         let disabled = false;
-        if (end > CLOSE_MIN) disabled = true;
+        if (end > closeAt) disabled = true;
         else if (isToday && current < n + LEAD_MINS) disabled = true;
         else {
             const clashes = busy.filter(b => (current - BUFFER_MINS) < b.e_min && (end + BUFFER_MINS) > b.s_min).length;
@@ -625,11 +357,11 @@ async function handleFormSubmit(e) {
     const notes = document.getElementById('custNotes').value.trim() || 'None';
 
     if (name.length < 2) { alert('Please enter your full name.'); return; }
-    if (!/^[6-9]\d{9}$/.test(phone)) { alert('Please enter a valid 10-digit mobile number starting with 6, 7, 8 or 9.'); return; }
-    if (!holdToken) { alert('Your 7-minute hold has expired. Please choose a time again.'); goToStep(3); renderTimeSlots(); return; }
+    if (!PHONE_RE.test(phone)) { alert(CFG.locale.phoneError); return; }
+    if (!holdToken) { alert('Your ' + HOLD_MINS + '-minute hold has expired. Please choose a time again.'); goToStep(3); renderTimeSlots(); return; }
 
     submitBtn.disabled = true; label.innerText = 'Confirming…';
-    const refCode = 'TL-' + Math.floor(100000 + Math.random() * 900000);
+    const refCode = CFG.brand.refPrefix + Math.floor(100000 + Math.random() * 900000);
 
     const { data, error } = await sb.rpc('confirm_booking', {
         p_token: holdToken,
@@ -666,15 +398,15 @@ async function handleFormSubmit(e) {
 '*NEW APPOINTMENT BOOKING*\n' +
 '----------------------------------------\n' +
 '*Ref Code:* ' + refCode + '\n' +
-'*Sanctuary:* ' + bookingState.location.name + '\n' +
+'*' + CFG.labels.location + ':* ' + bookingState.location.name + '\n' +
 '*Service:* ' + bookingState.service.name + ' (' + bookingState.selectedOption.duration + ' Mins)\n' +
 '*Date:* ' + bookingState.date + '\n' +
 '*Time Slot:* ' + bookingState.timeSlot + '\n' +
 '*Price:* ' + money(bookingState.selectedOption.price) + '\n\n' +
 '*GUEST DETAILS:*\n' +
 '*Name:* ' + name + '\n' +
-'*Phone:* +91 ' + phone + '\n' +
-'*Chat:* https://wa.me/91' + phone + '\n' +
+'*Phone:* ' + CFG.locale.dialCode + ' ' + phone + '\n' +
+'*Chat:* https://wa.me/' + CFG.locale.countryCode + phone + '\n' +
 '*Notes:* ' + notes + '\n' +
 '----------------------------------------\n' +
 'This slot is now locked in the scheduler.';
@@ -699,19 +431,19 @@ function downloadCalendarEvent() {
     const utc = dt => dt.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
 
     const ics =
-'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Thalasso Luxe Wellness//Booking Engine//EN\r\nBEGIN:VEVENT\r\n' +
-'UID:' + bookingState.refCode + '@thalassoluxe\r\n' +
+'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//' + CFG.brand.calendarProdId + '//Booking Engine//EN\r\nBEGIN:VEVENT\r\n' +
+'UID:' + bookingState.refCode + '@' + CFG.brand.calendarUidDomain + '\r\n' +
 'DTSTAMP:' + utc(new Date()) + '\r\n' +
 'DTSTART:' + utc(startLocal) + '\r\n' +
 'DTEND:' + utc(endLocal) + '\r\n' +
-'SUMMARY:' + bookingState.service.name + ' - Thalasso Luxe\r\n' +
+'SUMMARY:' + bookingState.service.name + ' - ' + CFG.brand.name + '\r\n' +
 'DESCRIPTION:Appointment at ' + bookingState.location.name + '. Ref: ' + bookingState.refCode + '\r\n' +
 'LOCATION:' + bookingState.location.address + '\r\n' +
 'STATUS:CONFIRMED\r\nEND:VEVENT\r\nEND:VCALENDAR';
 
     const link = document.createElement('a');
     link.href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar;charset=utf-8;' }));
-    link.download = 'Thalasso_Booking_' + bookingState.refCode + '.ics';
+    link.download = CFG.brand.icsFilePrefix + bookingState.refCode + '.ics';
     document.body.appendChild(link); link.click(); link.remove();
 }
 
@@ -721,7 +453,7 @@ async function resetApp() {
                      date: null, timeSlot: null, startMinutes: null, customer: {} };
     document.getElementById('bookingForm').reset();
     generateDates();
-        SERVICES = SERVICES_STD;
+        SERVICES = DEFAULT_MENU;
     renderCategories();
     renderServices('All');
     goToStep(1);
@@ -732,6 +464,7 @@ async function resetApp() {
    ============================================================ */
 let DV = { date: null, branch: 'all', rows: [] };
 
+const aLocId = () => document.getElementById('aLoc').value;
 function dvInitPickers() {
     const today = ymdLocal(new Date());
     document.getElementById('dvDate').value = today;
@@ -780,7 +513,7 @@ function aUpdateEnds() {
     const end = start + dur;
     el.innerText = 'ends ' + minsToText(end) + ' (' + dur + 'm)';
     el.className = 'text-[11px] whitespace-nowrap font-semibold ' +
-        (end > CLOSE_MIN || start < OPEN_MIN ? 'text-rose-700' : 'text-emerald-700');
+        (end > closeOf(aLocId()) || start < openOf(aLocId()) ? 'text-rose-700' : 'text-emerald-700');
 }
 function dvFillSrv() {
     const list = menuFor(document.getElementById('aLoc').value);
@@ -849,13 +582,16 @@ function dvKpi() {
 function dvGrid() {
     const live = DV.rows.filter(b => b.status === 'confirmed');
     const times = [];
-    for (let t = OPEN_MIN; t < CLOSE_MIN; t += SLOT_STEP) times.push(t);
+    const hrs = DV.branch === 'all'
+        ? { open: Math.min(...LOCATIONS.map(l => openOf(l.id))), close: Math.max(...LOCATIONS.map(l => closeOf(l.id))) }
+        : { open: openOf(DV.branch), close: closeOf(DV.branch) };
+    for (let t = hrs.open; t < hrs.close; t += SLOT_STEP) times.push(t);
     const isToday = DV.date === ymdLocal(new Date());
     const n = nowMins();
     let head, body;
 
     if (DV.branch === 'all') {
-        head = LOCATIONS.map(l => `<th class="px-2 py-1.5 font-bold text-brand-900 whitespace-nowrap">${esc(l.name.replace(' Sanctuary',''))}</th>`).join('');
+        head = LOCATIONS.map(l => `<th class="px-2 py-1.5 font-bold text-brand-900 whitespace-nowrap">${esc(l.shortName || l.name)}</th>`).join('');
         body = times.map(t => {
             const rowCls = isToday && n >= t && n < t + SLOT_STEP ? 'bg-amber-50' : '';
             return `<tr class="${rowCls}"><td class="px-2 py-1 text-sand-800 whitespace-nowrap border-t border-sand-100">${minsToText(t)}</td>` +
@@ -911,8 +647,8 @@ function dvList() {
             <div class="mt-1 text-sm font-bold text-brand-900">${esc(b.name)} · ${esc(b.service_name)}</div>
             <div class="text-xs text-sand-800">${esc(b.loc_name)} · ${b.duration} mins · ${money(b.price)}${b.notes && b.notes !== 'None' ? ' · ' + esc(b.notes) : ''}</div>
             <div class="mt-2 flex flex-wrap gap-2 no-print">
-                <a href="tel:+91${esc(b.phone)}" class="px-2.5 py-1 bg-brand-100 text-brand-800 rounded-lg text-[11px] font-semibold">Call</a>
-                <a href="https://wa.me/91${esc(b.phone)}" target="_blank" class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg text-[11px] font-semibold">WhatsApp</a>
+                <a href="tel:${CFG.locale.dialCode}${esc(b.phone)}" class="px-2.5 py-1 bg-brand-100 text-brand-800 rounded-lg text-[11px] font-semibold">Call</a>
+                <a href="https://wa.me/${CFG.locale.countryCode}${esc(b.phone)}" target="_blank" class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg text-[11px] font-semibold">WhatsApp</a>
                 ${dead ? '' : `<button onclick="dvAssign('${b.id}')" class="px-2.5 py-1 bg-indigo-100 text-indigo-800 rounded-lg text-[11px] font-semibold">${b.therapist_name ? 'Change therapist' : 'Assign therapist'}</button>`}
                 ${dead ? '' : `<button onclick="dvMark('${b.id}','noshow')" class="px-2.5 py-1 bg-amber-100 text-amber-800 rounded-lg text-[11px] font-semibold">No-show</button>
                 <button onclick="dvMark('${b.id}','cancelled')" class="px-2.5 py-1 bg-rose-100 text-rose-800 rounded-lg text-[11px] font-semibold">Cancel</button>`}
@@ -944,13 +680,13 @@ async function dvAddBooking(btn) {
     const ther  = (TH.cands || []).find(c => c.id === therId);
 
     if (name.length < 2) { alert('Enter the guest name.'); return; }
-    if (!/^[6-9]\d{9}$/.test(phone)) { alert('Enter a valid 10-digit mobile number.'); return; }
+    if (!PHONE_RE.test(phone)) { alert(CFG.locale.phoneErrorStaff); return; }
     if (start === null) { alert('Enter a start time.'); return; }
-    if (start < OPEN_MIN) { alert('We open at ' + minsToText(OPEN_MIN) + '. Pick a later start.'); return; }
-    if (start + duration > CLOSE_MIN) { alert('That session would run past 11:00 PM.'); return; }
+    if (start < openOf(locId)) { alert('We open at ' + minsToText(openOf(locId)) + '. Pick a later start.'); return; }
+    if (start + duration > closeOf(locId)) { alert('That session would run past ' + minsToText(closeOf(locId)) + '.'); return; }
 
     btn.disabled = true; btn.innerText = 'Saving…';
-    const ref = 'TL-' + Math.floor(100000 + Math.random() * 900000);
+    const ref = CFG.brand.refPrefix + Math.floor(100000 + Math.random() * 900000);
     const who = (await sb.auth.getUser()).data.user?.email || 'staff';
     let newId = null, hardError = null;
 
@@ -995,14 +731,14 @@ function dvCsv() {
         q(c === 'start' ? minsToText(r.start_min) : c === 'end' ? minsToText(r.end_min) : r[c])).join(',')).join('\n');
     const link = document.createElement('a');
     link.href = URL.createObjectURL(new Blob([cols.join(',') + '\n' + body], { type: 'text/csv;charset=utf-8;' }));
-    link.download = 'thalasso_' + DV.branch + '_' + DV.date + '.csv';
+    link.download = CFG.brand.csvFilePrefix + DV.branch + '_' + DV.date + '.csv';
     document.body.appendChild(link); link.click(); link.remove();
 }
 
 /* ============================================================
    13. THERAPIST ATTENDANCE + AUTOMATIC ALLOCATION
    ============================================================ */
-const TH_MAX = 20;
+/* TH_MAX comes from the tenant config block at the top of this file. */
 let TH = { date: null, loc: null, roster: [], bookings: [], cands: [] };
 let aTherTimer = null;
 
@@ -1024,7 +760,7 @@ function thInit() {
     document.getElementById('tLoc').innerHTML =
         LOCATIONS.map(l => `<option value="${l.id}">${esc(l.name)}</option>`).join('');
     document.getElementById('tLoc').onchange = thLoadDir;
-    document.getElementById('tArr').value = '11:30';
+    document.getElementById('tArr').value = pad2(Math.floor(RULES.openMin / 60)) + ':' + pad2(RULES.openMin % 60);
     setInterval(() => {
         if (!document.getElementById('dvModal').classList.contains('hidden')) thRenderGrid();
     }, 60000);
@@ -1286,6 +1022,3 @@ async function dvAssign(id) {
     if (data !== 'ok') { alert('Not assigned — ' + thReason(data) + '.'); return; }
     dvLoad();
 }
-</script>
-</body>
-</html>
