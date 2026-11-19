@@ -179,7 +179,7 @@
         "id": "df10",
         "cat": "Massage",
         "name": "La Bella Volcanic Therapy",
-        "desc": "Smooth heated basalt stones massaged deep into muscles.",
+        "desc": "Smooth heated basalt stones massaged deeply, easing muscle tension.",
         "options": [
           {
             "duration": 60,
@@ -195,7 +195,7 @@
         "id": "df11",
         "cat": "Massage",
         "name": "Deep Tissue Relief",
-        "desc": "Focused pressure into deep muscle layers to release chronic tension.",
+        "desc": "Focused pressure on the deep muscle layers to release chronic tension.",
         "options": [
           {
             "duration": 60,

@@ -21,6 +21,15 @@ test('the seed only refers to tables that the migrations create', () => {
   for (const name of used) assert.ok(KNOWN_TABLES.has(name), `seed refers to unknown table "${name}"`);
 });
 
+test('no quoted text in the seed reads like a SQL statement ("into muscles", "from menus", ...)', () => {
+  // Supabase\'s SQL Editor reported relation "muscles" does not exist for the words "massaged deep into muscles"
+  // inside a quoted description. Keep treatment text free of "<sql keyword> <word>" so it cannot be mistaken for SQL.
+  const literals = seedSql.match(/'(?:[^']|'')*'/g) || [];
+  assert.ok(literals.length > 100, 'found the quoted strings');
+  const risky = literals.filter(s => /\b(into|from|join|update|table|truncate)\s+[a-z_"]/i.test(s));
+  assert.deepEqual(risky, [], 'reword these treatment/branch texts');
+});
+
 test('migrations then seed apply cleanly on an empty database, and the seed can be run again', async () => {
   const db = await makeDb();                             // applies every migration in order
   await db.exec(seedSql);
