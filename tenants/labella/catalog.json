@@ -1,0 +1,562 @@
+{
+  "menuNames": {
+    "def": "Defence Colony Menu",
+    "cp": "Connaught Place Menu"
+  },
+  "branches": [
+    {
+      "id": "def",
+      "name": "Defence Colony",
+      "shortName": "Defence Colony",
+      "city": "New Delhi",
+      "phone": "919650239579",
+      "address": "A-262, 2nd Floor, Defence Colony, New Delhi 110024",
+      "rooms": 14,
+      "openMin": 660,
+      "closeMin": 1380,
+      "menu": "def"
+    },
+    {
+      "id": "cp",
+      "name": "Connaught Place",
+      "shortName": "Connaught Place",
+      "city": "New Delhi",
+      "phone": "919650517251",
+      "address": "1st Floor, M-39, above GT Road, Shankar Market, Restaurant, Connaught Place, New Delhi 110001",
+      "rooms": 6,
+      "openMin": 660,
+      "closeMin": 1320,
+      "menu": "cp"
+    }
+  ],
+  "menus": {
+    "def": [
+      {
+        "id": "df01",
+        "cat": "Signature",
+        "name": "Moroccan Bath",
+        "desc": "Steam session, black soap, kessa glove exfoliation, rhassoul clay mask and argan oil.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 5000
+          },
+          {
+            "duration": 90,
+            "price": 7000
+          }
+        ]
+      },
+      {
+        "id": "df02",
+        "cat": "Ayurvedic & Herbal",
+        "name": "Shirodhara Ritual",
+        "desc": "Ayurvedic therapy with a continuous stream of warm herbal oil poured on the forehead.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 3500
+          },
+          {
+            "duration": 90,
+            "price": 5200
+          }
+        ]
+      },
+      {
+        "id": "df03",
+        "cat": "Signature",
+        "name": "Signature Cure of the Sea",
+        "desc": "A deeply hydrating and rejuvenating water-inspired skin and body ritual.",
+        "options": [
+          {
+            "duration": 90,
+            "price": 5999
+          },
+          {
+            "duration": 120,
+            "price": 8999
+          }
+        ]
+      },
+      {
+        "id": "df04",
+        "cat": "Signature",
+        "name": "Four Hands Therapy",
+        "desc": "Synchronized four-hand massage by two skilled therapists.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 5499
+          },
+          {
+            "duration": 90,
+            "price": 8499
+          }
+        ]
+      },
+      {
+        "id": "df05",
+        "cat": "Ayurvedic & Herbal",
+        "name": "La Bella Potli Massage",
+        "desc": "Therapeutic massage using warm herbal potli poultices.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 3500
+          },
+          {
+            "duration": 90,
+            "price": 5200
+          }
+        ]
+      },
+      {
+        "id": "df06",
+        "cat": "Massage",
+        "name": "Balinese Massage",
+        "desc": "Rhythmic Balinese massage using acupressure, kneading and aromatherapy.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 2799
+          },
+          {
+            "duration": 90,
+            "price": 4499
+          }
+        ]
+      },
+      {
+        "id": "df07",
+        "cat": "Massage",
+        "name": "Swedish Massage",
+        "desc": "Soothing light-pressure massage to calm the nervous system.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 2500
+          },
+          {
+            "duration": 90,
+            "price": 4299
+          }
+        ]
+      },
+      {
+        "id": "df08",
+        "cat": "Massage",
+        "name": "Thai Balm Massage",
+        "desc": "Improves circulation, reduces inflammation and moisturizes skin.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 3499
+          },
+          {
+            "duration": 90,
+            "price": 4699
+          }
+        ]
+      },
+      {
+        "id": "df09",
+        "cat": "Massage",
+        "name": "Thai Massage",
+        "desc": "Traditional Thai deep tissue pressure, muscle and joint stretching, and yoga-like poses.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 2799
+          },
+          {
+            "duration": 90,
+            "price": 4499
+          }
+        ]
+      },
+      {
+        "id": "df10",
+        "cat": "Massage",
+        "name": "La Bella Volcanic Therapy",
+        "desc": "Smooth heated basalt stones massaged deep into muscles.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 3299
+          },
+          {
+            "duration": 90,
+            "price": 4999
+          }
+        ]
+      },
+      {
+        "id": "df11",
+        "cat": "Massage",
+        "name": "Deep Tissue Relief",
+        "desc": "Focused pressure into deep muscle layers to release chronic tension.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 2799
+          },
+          {
+            "duration": 90,
+            "price": 4399
+          }
+        ]
+      },
+      {
+        "id": "df12",
+        "cat": "Signature",
+        "name": "La Bella Aroma Ritual",
+        "desc": "Signature blend of scrub, mask and massage with mineral-rich clays and botanical oils.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 2700
+          },
+          {
+            "duration": 90,
+            "price": 4499
+          }
+        ]
+      },
+      {
+        "id": "df13",
+        "cat": "Massage",
+        "name": "La Bella Touch of the Feather",
+        "desc": "Gentle massage using light fingertip stroking movements.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 2499
+          },
+          {
+            "duration": 90,
+            "price": 4299
+          }
+        ]
+      },
+      {
+        "id": "df14",
+        "cat": "Ayurvedic & Herbal",
+        "name": "Thai Herbal Retreat",
+        "desc": "Warm herbal compress therapy to soothe sore muscles.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 3500
+          },
+          {
+            "duration": 90,
+            "price": 5200
+          }
+        ]
+      },
+      {
+        "id": "df15",
+        "cat": "Ayurvedic & Herbal",
+        "name": "Abhyanga Ritual",
+        "desc": "Traditional Ayurvedic full-body warm herbal oil massage.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 3500
+          },
+          {
+            "duration": 90,
+            "price": 5200
+          }
+        ]
+      },
+      {
+        "id": "df16",
+        "cat": "Couples",
+        "name": "La Bella Couples Basic",
+        "desc": "Choice of basic massage for 60 minutes with complimentary steam bath and shower.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 6999
+          }
+        ]
+      },
+      {
+        "id": "df17",
+        "cat": "Couples",
+        "name": "La Bella Couples Premium",
+        "desc": "Choice of basic massage for 90 minutes with complimentary steam bath and shower.",
+        "options": [
+          {
+            "duration": 90,
+            "price": 9999
+          }
+        ]
+      },
+      {
+        "id": "df18",
+        "cat": "Couples",
+        "name": "La Bella Couples Grand",
+        "desc": "90-minute basic massage + scrub / foot reflexology, jacuzzi with bath bomb, complimentary steam & shower.",
+        "options": [
+          {
+            "duration": 105,
+            "price": 11999
+          }
+        ]
+      }
+    ],
+    "cp": [
+      {
+        "id": "cp01",
+        "cat": "Signature",
+        "name": "La Bella Signature Cure of the Sea",
+        "desc": "Body massage, body scrub, steam & shower, jacuzzi bath and shower.",
+        "options": [
+          {
+            "duration": 90,
+            "price": 6999
+          },
+          {
+            "duration": 120,
+            "price": 9300
+          }
+        ]
+      },
+      {
+        "id": "cp02",
+        "cat": "Signature",
+        "name": "La Bella Four Hands Therapy",
+        "desc": "Two massage therapists working simultaneously in synchronization.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 6499
+          },
+          {
+            "duration": 90,
+            "price": 9199
+          }
+        ]
+      },
+      {
+        "id": "cp03",
+        "cat": "Massage",
+        "name": "Balinese Massage",
+        "desc": "A blend of massage techniques to refresh mind and body.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 3799
+          },
+          {
+            "duration": 90,
+            "price": 5199
+          }
+        ]
+      },
+      {
+        "id": "cp04",
+        "cat": "Massage",
+        "name": "Deep Tissue Massage",
+        "desc": "Slow strokes and deep pressure with hands, arms or elbows to release contracted muscles.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 3799
+          },
+          {
+            "duration": 90,
+            "price": 5199
+          }
+        ]
+      },
+      {
+        "id": "cp05",
+        "cat": "Massage",
+        "name": "Thai Massage",
+        "desc": "Traditional Thai deep tissue pressure, muscle and joint stretching, and yoga-like adjustments.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 3799
+          },
+          {
+            "duration": 90,
+            "price": 5199
+          }
+        ]
+      },
+      {
+        "id": "cp06",
+        "cat": "Bath & Sauna",
+        "name": "La Bella Sauna Bath",
+        "desc": "Boosts metabolism and eases muscle, joint and low back pain.",
+        "options": [
+          {
+            "duration": 30,
+            "price": 2499
+          },
+          {
+            "duration": 45,
+            "price": 3199
+          },
+          {
+            "duration": 60,
+            "price": 3999
+          }
+        ]
+      },
+      {
+        "id": "cp07",
+        "cat": "Massage",
+        "name": "Swedish Massage",
+        "desc": "Soft massage using palms and thumbs to ease full-body tightness.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 3499
+          },
+          {
+            "duration": 90,
+            "price": 4999
+          }
+        ]
+      },
+      {
+        "id": "cp08",
+        "cat": "Massage",
+        "name": "Foot Reflexology",
+        "desc": "Pinpoint pressure on targeted areas of the feet.",
+        "options": [
+          {
+            "duration": 30,
+            "price": 1999
+          },
+          {
+            "duration": 60,
+            "price": 2499
+          }
+        ]
+      },
+      {
+        "id": "cp09",
+        "cat": "Massage",
+        "name": "Chocolate Massage",
+        "desc": "Improves circulation, reduces skin inflammation and leaves skin moisturized.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 4199
+          },
+          {
+            "duration": 90,
+            "price": 5599
+          }
+        ]
+      },
+      {
+        "id": "cp10",
+        "cat": "Massage",
+        "name": "La Bella Touch of the Feather",
+        "desc": "Gentle massage using light stroking movements with the fingertips.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 3499
+          },
+          {
+            "duration": 90,
+            "price": 4999
+          }
+        ]
+      },
+      {
+        "id": "cp11",
+        "cat": "Ayurvedic & Herbal",
+        "name": "La Bella Potli Massage",
+        "desc": "Traditional Ayurvedic technique using heated herbal pouches.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 3999
+          },
+          {
+            "duration": 90,
+            "price": 5299
+          }
+        ]
+      },
+      {
+        "id": "cp12",
+        "cat": "Massage",
+        "name": "La Bella Volcanic Therapy",
+        "desc": "Heated basalt stones placed on spine, stomach, palms and feet to relieve tension.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 3999
+          },
+          {
+            "duration": 90,
+            "price": 5299
+          }
+        ]
+      },
+      {
+        "id": "cp13",
+        "cat": "Massage",
+        "name": "Thai Balm Massage",
+        "desc": "Improves circulation, relieves stress and leaves skin soft and moisturized.",
+        "options": [
+          {
+            "duration": 60,
+            "price": 4199
+          },
+          {
+            "duration": 90,
+            "price": 5599
+          }
+        ]
+      },
+      {
+        "id": "cp14",
+        "cat": "Couples",
+        "name": "La Bella Couples Basic",
+        "desc": "Choice of basic massage + scrub for female / foot reflexology for male, with complimentary steam & shower.",
+        "options": [
+          {
+            "duration": 75,
+            "price": 7999
+          }
+        ]
+      },
+      {
+        "id": "cp15",
+        "cat": "Couples",
+        "name": "La Bella Couples Premium",
+        "desc": "Choice of basic massage for 90 minutes, with complimentary steam & shower.",
+        "options": [
+          {
+            "duration": 90,
+            "price": 10999
+          }
+        ]
+      },
+      {
+        "id": "cp16",
+        "cat": "Couples",
+        "name": "La Bella Couples Grand",
+        "desc": "Basic massage + scrub for female / foot reflexology for male, jacuzzi hydrotherapy with bath bomb and a 15-minute sauna bath.",
+        "options": [
+          {
+            "duration": 105,
+            "price": 13999
+          }
+        ]
+      }
+    ]
+  }
+}

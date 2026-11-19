@@ -8,6 +8,10 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "build:thalasso": "TENANT=thalasso node scripts/build.mjs",
-    "test": "node --test test/*.test.mjs"
+    "build:labella": "TENANT=labella node scripts/build.mjs",
+    "seed:labella": "node scripts/gen-seed.mjs labella",
+    "test": "node --test test/*.test.mjs",
+    "test:db": "node --test test/db/*.test.mjs",
+    "test:all": "node --test test/*.test.mjs test/db/*.test.mjs"
   }
 }

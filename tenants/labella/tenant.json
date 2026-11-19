@@ -1,0 +1,63 @@
+{
+  "slug": "labella",
+  "status": "building",
+  "backend": "v2",
+  "lang": "en",
+  "timezone": "Asia/Kolkata",
+  "defaultMenu": "def",
+
+  "brand": {
+    "name": "La Bella Luxè Wellness",
+    "tagline": "Wellness & Spa",
+    "themeColor": "#3D2E22",
+    "refPrefix": "LB-",
+    "calendarProdId": "La Bella Luxe Wellness",
+    "calendarUidDomain": "labellaluxe",
+    "icsFilePrefix": "LaBella_Booking_",
+    "csvFilePrefix": "labella_"
+  },
+
+  "colors": {
+    "brand": { "50": "#FAF6EE", "100": "#F0E6D2", "200": "#E2D0AC", "500": "#B6935A", "600": "#7F6130", "800": "#3D2E22", "900": "#2B2018" },
+    "sand":  { "50": "#F7F3ED", "100": "#EBE3D5", "200": "#DCCFBA", "800": "#6B5A4C" }
+  },
+
+  "seo": {
+    "title": "Book an Appointment | La Bella Luxè Wellness, Defence Colony & Connaught Place",
+    "description": "Book your massage or spa treatment at La Bella Luxè Wellness — Defence Colony (11 AM to 11 PM) and Connaught Place (11 AM to 10 PM), New Delhi.",
+    "ogTitle": "La Bella Luxè Wellness — Book Online",
+    "ogDescription": "Two branches in New Delhi. Signature rituals, massages, Ayurvedic therapies and couples packages."
+  },
+
+  "labels": {
+    "location": "Branch",
+    "branchWord": "branch",
+    "locationPlural": "Branches",
+    "selectLocationTitle": "Select Your Branch",
+    "selectLocationSub": "Choose the branch nearest to you.",
+    "serviceTitle": "Choose Treatment",
+    "serviceSub": "Select a treatment from our menu.",
+    "serviceSummary": "Treatment"
+  },
+
+  "locale": {
+    "currencySymbol": "₹",
+    "numberLocale": "en-IN",
+    "countryCode": "91",
+    "dialCode": "+91",
+    "phonePattern": "[6-9]\\d{9}",
+    "phoneError": "Please enter a valid 10-digit mobile number starting with 6, 7, 8 or 9.",
+    "phoneErrorStaff": "Enter a valid 10-digit mobile number."
+  },
+
+  "rules": {
+    "openMin": 660,
+    "closeMin": 1380,
+    "slotStep": 30,
+    "bufferMins": 15,
+    "leadMins": 30,
+    "holdMinutes": 7,
+    "bookingDays": 7,
+    "therapistMax": 20
+  }
+}

@@ -69,7 +69,8 @@ test('src/app.js and the template contain no client-specific strings', () => {
 test('generated app.js is syntactically valid and config.js evaluates', () => {
   const out = tmp();
   build({ tenant: 'thalasso', outDir: out, quiet: true });
-  new vm.Script(fs.readFileSync(path.join(out, 'app.js'), 'utf8'));
+  const appSource = fs.readFileSync(path.join(out, 'app.js'), 'utf8');
+  assert.doesNotThrow(() => new vm.Script(appSource), 'app.js must parse');
   const sandbox = { window: {} };
   vm.runInNewContext(fs.readFileSync(path.join(out, 'config.js'), 'utf8'), sandbox);
   assert.equal(sandbox.window.APP_CONFIG.tenant, 'thalasso');
@@ -92,8 +93,10 @@ test('env vars override the supabase block; service_role key is rejected', () =>
     process.env.SUPABASE_ANON_KEY = jwt('anon');
     assert.throws(() => build({ tenant: 'thalasso', outDir: tmp(), quiet: true }), /different project/);
   } finally {
-    for (const [k, v] of [['SUPABASE_URL', save.u], ['SUPABASE_ANON_KEY', save.k]])
-      v === undefined ? delete process.env[k] : (process.env[k] = v);
+    for (const [k, v] of [['SUPABASE_URL', save.u], ['SUPABASE_ANON_KEY', save.k]]) {
+      if (v === undefined) delete process.env[k];
+      else process.env[k] = v;
+    }
   }
 });
 

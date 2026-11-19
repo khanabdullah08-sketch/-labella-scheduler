@@ -1,6 +1,9 @@
 .DS_Store
 node_modules/
 dist/
+# test/db has its own package.json (PGlite, an in-process Postgres used only by tests)
+!test/db/package.json
+!test/db/package-lock.json
 
 # Local environment files (never commit real values). .env.example is the template.
 .env

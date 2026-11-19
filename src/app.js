@@ -11,6 +11,12 @@ const SUPA_URL = CFG.supabase.url;
 const SUPA_KEY = CFG.supabase.anonKey;
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 
+/* Two database flavours share this engine:
+   legacy = the original single-tenant project (browser sends room count / price, fixed hours);
+   v2     = shared multi-tenant project (database decides rooms, hours, price, reference). */
+const V2 = CFG.backend === 'v2';
+const TENANT = CFG.tenant;
+
 const SLOT_STEP     = RULES.slotStep;
 const BUFFER_MINS   = RULES.bufferMins;      // cleaning gap between sessions
 const LEAD_MINS     = RULES.leadMins;        // minimum notice for same-day bookings
@@ -231,11 +237,18 @@ async function renderTimeSlots() {
 
     container.innerHTML = '<div class="col-span-full text-xs text-sand-800 py-4 text-center">Checking live availability…</div>';
 
-    const { data, error } = await sb.rpc('get_busy', {
-        p_loc: bookingState.location.id,
-        p_date: bookingState.date,
-        p_token: holdToken
-    });
+    const { data, error } = V2
+        ? await sb.rpc('get_busy_v2', {
+            p_tenant: TENANT,
+            p_branch: bookingState.location.id,
+            p_date: bookingState.date,
+            p_token: holdToken
+        })
+        : await sb.rpc('get_busy', {
+            p_loc: bookingState.location.id,
+            p_date: bookingState.date,
+            p_token: holdToken
+        });
 
     if (error) {
         container.innerHTML = '<div class="col-span-full text-xs text-red-700 py-4 text-center">Could not load availability. Check your internet, then tap the date again.</div>';
@@ -275,6 +288,17 @@ function highlightSlot(start) {
     btn.className = 'py-2.5 px-2 rounded-xl border text-center transition text-xs font-bold bg-brand-800 text-white border-brand-800 shadow-sm';
 }
 
+/* Plain-English text for the codes the hold functions return. */
+function holdMessage(code) {
+    if (!V2 && code !== 'full') code = 'error';      // the legacy database only ever returns 'full'
+    return ({
+        full:          'Sorry — that slot was just taken by someone else. Please pick another time.',
+        toosoon:       'That time is too soon to book online. Please pick a later slot.',
+        closed:        'That time is outside our opening hours. Please pick another slot.',
+        baddate:       'That date is not open for booking. Please pick another date.',
+        price_changed: 'Our prices were just updated. Please refresh the page and choose your treatment again.'
+    })[code] || 'Could not hold that slot. Please check your internet and try again.';
+}
 async function selectTimeSlot(startMinutes, btnEl) {
     document.getElementById('timeNextBtn').disabled = true;
     const original = btnEl.innerText;
@@ -282,20 +306,29 @@ async function selectTimeSlot(startMinutes, btnEl) {
     await releaseHold();
 
     const token = 'h-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
-    const { data, error } = await sb.rpc('create_hold', {
-        p_loc: bookingState.location.id,
-        p_date: bookingState.date,
-        p_start: startMinutes,
-        p_duration: bookingState.selectedOption.duration,
-        p_rooms: capOf(bookingState.location.id),
-        p_token: token
-    });
+    const { data, error } = V2
+        ? await sb.rpc('create_hold_v2', {
+            p_tenant: TENANT,
+            p_branch: bookingState.location.id,
+            p_date: bookingState.date,
+            p_start: startMinutes,
+            p_service: bookingState.service.id,
+            p_duration: bookingState.selectedOption.duration,
+            p_token: token,
+            p_price_seen: bookingState.selectedOption.price
+        })
+        : await sb.rpc('create_hold', {
+            p_loc: bookingState.location.id,
+            p_date: bookingState.date,
+            p_start: startMinutes,
+            p_duration: bookingState.selectedOption.duration,
+            p_rooms: capOf(bookingState.location.id),
+            p_token: token
+        });
 
     if (error || data !== 'ok') {
         btnEl.innerText = original;
-        alert(data === 'full'
-            ? 'Sorry — that slot was just taken by someone else. Please pick another time.'
-            : 'Could not hold that slot. Please check your internet and try again.');
+        alert(holdMessage(error ? 'error' : data));
         renderTimeSlots();
         return;
     }
@@ -361,26 +394,42 @@ async function handleFormSubmit(e) {
     if (!holdToken) { alert('Your ' + HOLD_MINS + '-minute hold has expired. Please choose a time again.'); goToStep(3); renderTimeSlots(); return; }
 
     submitBtn.disabled = true; label.innerText = 'Confirming…';
-    const refCode = CFG.brand.refPrefix + Math.floor(100000 + Math.random() * 900000);
-
-    const { data, error } = await sb.rpc('confirm_booking', {
-        p_token: holdToken,
-        p_ref: refCode,
-        p_loc_name: bookingState.location.name,
-        p_service_id: bookingState.service.id,
-        p_service_name: bookingState.service.name + ' (' + bookingState.selectedOption.duration + ' Mins)',
-        p_price: bookingState.selectedOption.price,
-        p_name: name,
-        p_phone: phone,
-        p_notes: notes,
-        p_source: 'online',
-        p_created_by: null
-    });
+    /* legacy: the reference is made here. v2: the database issues it (guaranteed unique). */
+    let refCode = CFG.brand.refPrefix + Math.floor(100000 + Math.random() * 900000);
+    let status, error;
+    if (V2) {
+        const res = await sb.rpc('confirm_booking_v2', {
+            p_tenant: TENANT,
+            p_token: holdToken,
+            p_name: name,
+            p_phone: phone,
+            p_notes: notes
+        });
+        error = res.error;
+        status = res.data ? res.data.status : undefined;
+        if (status === 'ok') refCode = res.data.ref;
+    } else {
+        const res = await sb.rpc('confirm_booking', {
+            p_token: holdToken,
+            p_ref: refCode,
+            p_loc_name: bookingState.location.name,
+            p_service_id: bookingState.service.id,
+            p_service_name: bookingState.service.name + ' (' + bookingState.selectedOption.duration + ' Mins)',
+            p_price: bookingState.selectedOption.price,
+            p_name: name,
+            p_phone: phone,
+            p_notes: notes,
+            p_source: 'online',
+            p_created_by: null
+        });
+        error = res.error;
+        status = res.data;
+    }
 
     submitBtn.disabled = false; label.innerText = 'Confirm Booking via WhatsApp';
 
-    if (error || data !== 'ok') {
-        if (data === 'expired') {
+    if (error || status !== 'ok') {
+        if (status === 'expired') {
             holdToken = null; stopHoldCountdown();
             alert('Your hold expired. Please pick a time again.');
             goToStep(3); renderTimeSlots();
@@ -529,6 +578,14 @@ async function dvGate() {
         const { error } = await sb.auth.signInWithPassword({ email: email.trim(), password });
         if (error) { alert('Login failed: ' + error.message); return; }
     }
+    if (V2) {
+        const me = await sb.from('staff').select('role').limit(1);
+        if (me.error || !(me.data && me.data.length)) {
+            await sb.auth.signOut();
+            alert('This account is not set up as staff for this site. Ask the owner to add you.');
+            return;
+        }
+    }
     document.getElementById('dvModal').classList.remove('hidden');
     dvLoad();
 }
@@ -664,6 +721,15 @@ async function dvMark(id, status) {
     dvLoad();
 }
 
+function staffBookingReason(code) {
+    return ({
+        forbidden: 'your account is not allowed to book for this branch',
+        invalid:   'that branch, treatment or duration is not on the menu',
+        badname:   'the guest name is too short',
+        badphone:  'the phone number is not valid',
+        closed:    'that time is outside the branch opening hours'
+    })[code] || ('unexpected result: ' + code);
+}
 async function dvAddBooking(btn) {
     const locId = document.getElementById('aLoc').value;
     const loc   = LOCATIONS.find(l => l.id === locId);
@@ -686,22 +752,33 @@ async function dvAddBooking(btn) {
     if (start + duration > closeOf(locId)) { alert('That session would run past ' + minsToText(closeOf(locId)) + '.'); return; }
 
     btn.disabled = true; btn.innerText = 'Saving…';
-    const ref = CFG.brand.refPrefix + Math.floor(100000 + Math.random() * 900000);
-    const who = (await sb.auth.getUser()).data.user?.email || 'staff';
+    let ref = CFG.brand.refPrefix + Math.floor(100000 + Math.random() * 900000);
     let newId = null, hardError = null;
 
-    for (let room = 1; room <= capOf(locId); room++) {
-        const { data, error } = await sb.from('bookings').insert({
-            kind: 'booking', status: 'confirmed', ref: ref,
-            loc_id: locId, loc_name: loc.name,
-            service_id: srv.id, service_name: srv.name + ' (' + duration + ' Mins)',
-            duration: duration, price: price,
-            date: date, start_min: start, end_min: start + duration, room_no: room,
-            name: name, phone: phone, notes: notes, source: source,
-            created_by: who
-        }).select('id').single();
-        if (!error) { newId = data.id; break; }
-        if (error.code !== '23P01') { hardError = error.message; break; }
+    if (V2) {
+        /* the database picks the room, checks hours + cleaning gap, takes the price from the menu */
+        const { data, error } = await sb.rpc('staff_create_booking', {
+            p_branch: locId, p_service: srv.id, p_duration: duration, p_date: date, p_start: start,
+            p_name: name, p_phone: phone, p_notes: notes, p_source: source
+        });
+        if (error) hardError = error.message;
+        else if (data.status === 'ok') { newId = data.id; ref = data.ref; }
+        else if (data.status !== 'full') hardError = staffBookingReason(data.status);
+    } else {
+        const who = (await sb.auth.getUser()).data.user?.email || 'staff';
+        for (let room = 1; room <= capOf(locId); room++) {
+            const { data, error } = await sb.from('bookings').insert({
+                kind: 'booking', status: 'confirmed', ref: ref,
+                loc_id: locId, loc_name: loc.name,
+                service_id: srv.id, service_name: srv.name + ' (' + duration + ' Mins)',
+                duration: duration, price: price,
+                date: date, start_min: start, end_min: start + duration, room_no: room,
+                name: name, phone: phone, notes: notes, source: source,
+                created_by: who
+            }).select('id').single();
+            if (!error) { newId = data.id; break; }
+            if (error.code !== '23P01') { hardError = error.message; break; }
+        }
     }
 
     btn.disabled = false; btn.innerText = 'Save booking';
@@ -751,7 +828,7 @@ function thReason(code) {
         on_leave:       'she is marked on leave for that date',
         not_arrived:    'she has not arrived by that time',
         shift_ended:    'that session runs past her shift end',
-        not_registered: 'she is not on the roster for that centre and date',
+        not_registered: 'she is not on the roster for that ' + CFG.labels.branchWord + ' and date',
         no_booking:     'the booking could not be found'
     })[code] || ('unexpected result: ' + code);
 }
@@ -780,7 +857,7 @@ async function thLoad() {
     if (DV.branch === 'all') {
         TH.roster = [];
         cnt.innerText = '';
-        box.innerHTML = '<div class="p-4 text-center text-sand-800">Pick a single centre above to see and manage its therapist roster.</div>';
+        box.innerHTML = '<div class="p-4 text-center text-sand-800">Pick a single ' + CFG.labels.branchWord + ' above to see and manage its therapist roster.</div>';
         return;
     }
     box.innerHTML = '<div class="p-4 text-sand-800">Loading roster…</div>';
@@ -998,7 +1075,7 @@ async function aFillTherapists() {
     } else {
         note.innerText = TH.cands.length
             ? 'No therapist is free for ' + minsToText(start) + '–' + minsToText(start + dur) + '.'
-            : 'No therapists on the roster for this centre and date.';
+            : 'No therapists on the roster for this ' + CFG.labels.branchWord + ' and date.';
         note.className = 'text-[11px] text-rose-700 font-semibold mt-1';
     }
 }

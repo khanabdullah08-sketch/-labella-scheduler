@@ -39,7 +39,7 @@
                 <button id="backBtn" onclick="handleBackNav()" class="hidden p-2 -ml-2 rounded-full hover:bg-sand-200 text-brand-800 transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                 </button>
-                <div>
+                {{{logoHtml}}}<div>
                     <h1 class="font-bold text-lg tracking-wide uppercase text-brand-800">{{brand.name}}</h1>
                     <p class="text-xs text-brand-600 font-medium">{{brand.tagline}}</p>
                 </div>
@@ -224,7 +224,7 @@
                     <datalist id="tDir"></datalist>
                     <label class="flex items-center gap-2 sm:col-span-2">Arrival time<input id="tArr" type="time" step="300" class="flex-1 p-2.5 border border-sand-200 rounded-lg"></label>
                 </div>
-                    <p class="text-[11px] text-sand-800">Only the arrival time is needed. Shift end is logged later with the <strong>End shift</strong> button in the roster. Max {{rules.therapistMax}} per centre per day — start typing to reuse a name.</p>
+                    <p class="text-[11px] text-sand-800">Only the arrival time is needed. Shift end is logged later with the <strong>End shift</strong> button in the roster. Max {{rules.therapistMax}} per {{labels.branchWord}} per day — start typing to reuse a name.</p>
                 <button onclick="thSave(this)" class="w-full py-2.5 bg-indigo-700 text-white font-bold rounded-lg text-xs">Save therapist</button>
             </div>
             <div class="bg-white border border-sand-200 rounded-xl p-3">

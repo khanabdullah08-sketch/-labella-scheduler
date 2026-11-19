@@ -58,7 +58,7 @@ function validate(t, catalog) {
     need(get(t, 'brand.' + k), `brand.${k} is required`);
   for (const k of ['title', 'description', 'ogTitle', 'ogDescription'])
     need(get(t, 'seo.' + k), `seo.${k} is required`);
-  for (const k of ['location', 'locationPlural', 'selectLocationTitle', 'selectLocationSub', 'serviceTitle', 'serviceSub', 'serviceSummary'])
+  for (const k of ['location', 'locationPlural', 'branchWord', 'selectLocationTitle', 'selectLocationSub', 'serviceTitle', 'serviceSub', 'serviceSummary'])
     need(get(t, 'labels.' + k), `labels.${k} is required`);
   for (const k of ['currencySymbol', 'numberLocale', 'countryCode', 'dialCode', 'phonePattern', 'phoneError', 'phoneErrorStaff'])
     need(get(t, 'locale.' + k), `locale.${k} is required`);
@@ -68,6 +68,15 @@ function validate(t, catalog) {
     'rules.openMin / rules.closeMin must be minutes-since-midnight with open < close');
   for (const p of ['brand', 'sand']) need(t.colors && t.colors[p], `colors.${p} palette is required`);
 
+  need([undefined, 'legacy', 'v2'].includes(t.backend), 'backend must be "legacy" (original Thalasso database) or "v2" (shared multi-tenant database)');
+  if (t.backend === 'v2') {
+    need(/^[A-Z0-9]{1,5}-$/.test(get(t, 'brand.refPrefix') || ''), 'brand.refPrefix must look like "LB-" for the v2 database');
+    need(t.timezone, 'timezone is required for the v2 database (e.g. Asia/Kolkata)');
+    need(/^[\w\\[\]{}+*?().|^$-]+$/.test(get(t, 'locale.phonePattern') || ''), 'locale.phonePattern contains unexpected characters');
+    for (const [menu, list] of Object.entries(catalog.menus || {}))
+      for (const s of list) need(/^[a-z0-9_]{1,20}$/.test(s.id || ''), `menu ${menu}: service id "${s.id}" must be lowercase letters/digits/underscore, max 20`);
+    for (const b of catalog.branches || []) need(/^[a-z0-9_]{1,20}$/.test(b.id || ''), `branch id "${b.id}" must be max 20 chars for the v2 database`);
+  }
   need(Array.isArray(catalog.branches) && catalog.branches.length > 0, 'catalog.branches must be a non-empty array');
   need(catalog.menus && Object.keys(catalog.menus).length > 0, 'catalog.menus must define at least one menu');
   need(catalog.menus && catalog.menus[t.defaultMenu], `defaultMenu "${t.defaultMenu}" is not a menu in catalog.menus`);
@@ -100,6 +109,12 @@ function validate(t, catalog) {
 }
 
 /* ---------- the build itself ---------- */
+/**
+ * @param {{ tenant?: string, outDir?: string, quiet?: boolean }} [options]
+ *   tenant  - folder name under tenants/ (falls back to the TENANT env var; there is no default)
+ *   outDir  - where to write the site (default: ./dist)
+ *   quiet   - suppress the success log line
+ */
 export function build({ tenant, outDir = path.join(ROOT, 'dist'), quiet = false } = {}) {
   loadEnvFile(path.join(ROOT, '.env'));
   tenant = tenant || process.env.TENANT;
@@ -132,9 +147,12 @@ export function build({ tenant, outDir = path.join(ROOT, 'dist'), quiet = false 
   if (errs.length) throw new Error(`Build failed for tenant "${tenant}":\n  - ` + errs.join('\n  - '));
 
   /* derived values */
+  const backend = t.backend || 'legacy';
+  const logoFile = ['png', 'webp', 'jpg', 'jpeg', 'svg'].map(e => 'logo.' + e).find(f => fs.existsSync(path.join(tdir, f)));
   const n = catalog.branches.length;
   const view = {
     ...t,
+    logoHtml: logoFile ? `<img src="${logoFile}" alt="" class="h-9 w-9 rounded-full object-cover">` : '',
     headerBadge: `${n} ${n === 1 ? t.labels.location : t.labels.locationPlural}`,
     hoursText: `${minsToText(t.rules.openMin)} \u2013 ${minsToText(t.rules.closeMin)} daily.`,
     closeText: minsToText(t.rules.closeMin),
@@ -152,7 +170,7 @@ export function build({ tenant, outDir = path.join(ROOT, 'dist'), quiet = false 
 
   /* runtime config consumed by src/app.js */
   const appConfig = {
-    tenant, defaultMenu: t.defaultMenu,
+    tenant, backend, defaultMenu: t.defaultMenu,
     brand: t.brand, labels: t.labels, locale: t.locale, rules: t.rules,
     supabase: { url: supaUrl, anonKey: supaKey },
     branches: catalog.branches, menus: catalog.menus
@@ -165,6 +183,7 @@ export function build({ tenant, outDir = path.join(ROOT, 'dist'), quiet = false 
   fs.copyFileSync(path.join(ROOT, 'src', 'app.js'), path.join(outDir, 'app.js'));
   fs.copyFileSync(path.join(ROOT, 'src', '_headers'), path.join(outDir, '_headers'));
   fs.copyFileSync(path.join(tdir, 'favicon.ico'), path.join(outDir, 'favicon.ico'));
+  if (logoFile) fs.copyFileSync(path.join(tdir, logoFile), path.join(outDir, logoFile));
 
   if (!quiet) console.log(`Built tenant "${tenant}" \u2192 ${path.relative(ROOT, outDir)}/  (${n} branches, ${Object.keys(catalog.menus).length} menus)`);
   return { outDir, html, appConfig };

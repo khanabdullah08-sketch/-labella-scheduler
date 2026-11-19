@@ -1,6 +1,7 @@
 {
   "slug": "thalasso",
   "status": "live",
+  "backend": "legacy",
   "lang": "en",
   "defaultMenu": "standard",
 
@@ -30,6 +31,7 @@
   "labels": {
     "location": "Sanctuary",
     "locationPlural": "Sanctuaries",
+    "branchWord": "centre",
     "selectLocationTitle": "Select Your Sanctuary",
     "selectLocationSub": "Choose a location nearest to you for your wellness experience.",
     "serviceTitle": "Choose Therapy",
