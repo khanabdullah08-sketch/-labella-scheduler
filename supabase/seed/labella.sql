@@ -21,7 +21,7 @@ select t.id, 'cp', 'Connaught Place Menu' from public.tenants t where t.slug = '
 on conflict (tenant_id, code) do update set name = excluded.name;
 
 insert into public.branches (tenant_id, code, name, short_name, city, address, phone, rooms, open_min, close_min, menu_id, sort)
-select t.id, 'def', 'Defence Colony', 'Defence Colony', 'New Delhi', 'A-262, 2nd Floor, Defence Colony, New Delhi 110024', '919650239579', 14,
+select t.id, 'def', 'Defence Colony', 'Defence Colony', 'New Delhi', '2nd Floor, A-262, Bhishma Pitamah Marg, Block A, Defence Colony, New Delhi 110003', '919650239579', 14,
   660, 1380, m.id, 0
 from public.tenants t join public.menus m on m.tenant_id = t.id and m.code = 'def'
 where t.slug = 'labella'
