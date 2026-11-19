@@ -18,7 +18,9 @@ test('LaBella builds with the brand, colours, wording and logo slot from the bri
   assert.ok(!/sanctuar|thalasso|vasant|sultanpur/i.test(html), 'no Thalasso wording may leak into LaBella');
   assert.equal(appConfig.backend, 'v2');
   assert.equal(appConfig.brand.refPrefix, 'LB-');
-  assert.ok(!html.includes('<img'), 'no logo file yet, so no <img> is rendered');
+  // the header shows the crest if (and only if) a logo file exists in tenants/labella/
+  const hasLogo = ['png', 'webp', 'jpg', 'jpeg', 'svg'].some(e => fs.existsSync(path.join(ROOT, 'tenants/labella/logo.' + e)));
+  assert.equal(html.includes('<img src="logo.'), hasLogo, 'logo <img> must appear exactly when a logo file exists');
 });
 
 test('the LaBella menus match the client brief (counts, spot-checked prices, per-branch differences)', () => {
