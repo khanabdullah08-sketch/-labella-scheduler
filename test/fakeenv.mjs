@@ -7,27 +7,52 @@ import { build } from '../scripts/build.mjs';
 /**
  * Minimal fake browser + fake Supabase client, so src/app.js can be exercised without a real browser.
  * `handler(name, args)` answers sb.rpc() calls; every call is recorded in `rpcCalls`.
+ * `opts.from(op)` answers sb.from(table)... queries, where op = { table, action, filters, payload, select };
+ * every query is recorded in `fromCalls`. `opts.session` is the logged-in session and `opts.confirm`
+ * answers confirm() dialogs (default: yes).
+ */
+/**
+ * @typedef {{ from?: (op: any) => any, session?: any, confirm?: (m: string) => boolean }} EnvOpts
  */
 /**
  * @param {any} appConfig
  * @param {(name: string, args: any) => any} [handler]
+ * @param {EnvOpts} [opts]
  */
-export function makeEnv(appConfig, handler = () => ({ data: 'ok', error: null })) {
+export function makeEnv(appConfig, handler = () => ({ data: 'ok', error: null }), opts = {}) {
   const els = {};
   const mk = id => (els[id] ??= {
     id, value: '', innerHTML: '', innerText: '', title: '', className: '', disabled: false,
-    classList: { add() {}, remove() {}, toggle() {} },
+    classList: {
+      add: c => { els[id].className = [...new Set(els[id].className.split(/\s+/).filter(Boolean).concat(c))].join(' '); },
+      remove: c => { els[id].className = els[id].className.split(/\s+/).filter(x => x && x !== c).join(' '); },
+      toggle() {}, contains: c => els[id].className.split(/\s+/).includes(c)
+    },
     querySelector: () => mk(id + '>q'), querySelectorAll: () => [], appendChild() {}, remove() {}, click() {}, reset() {}
   });
   const rpcCalls = [];
+  /** @type {any[]} */
+  const fromCalls = [];
   const sb = {
     rpc: async (name, args) => { rpcCalls.push([name, args]); return handler(name, args); },
-    from: () => {
-      const q = { select: () => q, eq: () => q, not: () => q, order: () => q, ilike: () => q, limit: () => q,
-        insert: () => q, update: () => q, delete: () => q, single: () => q, then: r => r({ data: [], error: null }) };
+    from: table => {
+      /** @type {{ table: string, action: string, filters: any[], payload: any, select: any }} */
+      const op = { table, action: 'select', filters: [], payload: null, select: null };
+      const q = {
+        select: cols => { op.select = cols; return q; },
+        update: p => { op.action = 'update'; op.payload = p; return q; },
+        insert: p => { op.action = 'insert'; op.payload = p; return q; },
+        delete: () => { op.action = 'delete'; return q; },
+        eq: (c, v) => { op.filters.push([c, v]); return q; },
+        not: () => q, order: () => q, ilike: () => q, limit: () => q, single: () => q,
+        then: (ok, bad) => {
+          fromCalls.push(op);
+          return Promise.resolve(opts.from ? opts.from(op) : { data: [], error: null }).then(ok, bad);
+        }
+      };
       return q;
     },
-    auth: { getSession: async () => ({ data: { session: null } }), getUser: async () => ({ data: { user: null } }), signOut: async () => {} }
+    auth: { getSession: async () => ({ data: { session: opts.session || null } }), getUser: async () => ({ data: { user: null } }), signOut: async () => {} }
   };
   const listeners = {};
   const document = {
@@ -43,11 +68,11 @@ export function makeEnv(appConfig, handler = () => ({ data: 'ok', error: null })
   const alerts = [];
   const ctx = vm.createContext({
     window, document, location: { hash: '' }, history: { replaceState() {} },
-    supabase: { createClient: () => sb }, console, alert: m => { alerts.push(m); }, confirm: () => true, prompt: () => null,
+    supabase: { createClient: () => sb }, console, alert: m => { alerts.push(m); }, confirm: m => (opts.confirm ? opts.confirm(m) : true), prompt: () => null,
     URL: { createObjectURL: () => 'blob:x' }, Blob: class {}, setTimeout, clearTimeout, setInterval: () => 0, clearInterval() {},
     Date, Math, Number, String, Array, Object, Set, RegExp, JSON, Promise, Intl, encodeURIComponent, isNaN
   });
-  return { ctx, els, listeners, rpcCalls, window, alerts };
+  return { ctx, els, listeners, rpcCalls, fromCalls, window, alerts };
 }
 
 /**
@@ -55,12 +80,14 @@ export function makeEnv(appConfig, handler = () => ({ data: 'ok', error: null })
  * @param {string} outDir
  * @param {any} appConfig
  * @param {(name: string, args: any) => any} [handler]
+ * @param {EnvOpts} [opts]
  */
-export function boot(outDir, appConfig, handler) {
-  const env = makeEnv(appConfig, handler);
+export function boot(outDir, appConfig, handler, opts) {
+  const env = makeEnv(appConfig, handler, opts);
   vm.runInContext(fs.readFileSync(path.join(outDir, 'app.js'), 'utf8') + `
 ;this.__t = { LOCATIONS, menuFor, selectLocation, selectDate, selectServiceOption, selectTimeSlot, renderTimeSlots,
-  handleFormSubmit, dvAddBooking, bookingState: () => bookingState, capOf, openOf, closeOf, cleanPhone, money, TH };`, env.ctx);
+  handleFormSubmit, dvAddBooking, bookingState: () => bookingState, capOf, openOf, closeOf, cleanPhone, money, TH,
+  loadLiveCatalog, dvGate, dvApplyRole, dvTab, dvLogout, dvFillSrv, mpLoad, mpEdit, mpSave, MP: () => MP };`, env.ctx);
   for (const f of env.listeners['doc:DOMContentLoaded'] || []) f();
   return { ...env, t: env.ctx.__t };
 }

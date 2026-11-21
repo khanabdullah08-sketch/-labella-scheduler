@@ -86,7 +86,7 @@ join (values
 ${optRows}
 ) as v(code, duration_min, price, sort) on v.code = s.code
 where t.slug = ${slug} and m.code = ${q(code)}
-on conflict (service_id, duration_min) do update set price = excluded.price, sort = excluded.sort;`, '');
+on conflict (service_id, duration_min) do update set sort = excluded.sort;   -- prices and on/off are owned by the Menu & Prices tab: re-running this file never resets them`, '');
   }
 
   out.push('commit;', '');

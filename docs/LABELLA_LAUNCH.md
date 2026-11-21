@@ -61,12 +61,20 @@ to the header automatically. Replace `tenants/labella/favicon.ico` with a real i
 - [ ] Add a therapist, make a phone booking, assign the therapist, mark a no-show.
 - [ ] Try to open the site's `#staff` with a random email: it must refuse.
 
-## Changing menus or prices later
-Edit `tenants/labella/catalog.json`, run `npm run seed:labella`, paste `supabase/seed/labella.sql` into the SQL Editor,
-rebuild the site. (The seed only adds/updates; to retire a treatment set `active = false` on it in the database,
-and remove it from the JSON.)
+## Changing prices (no Supabase, no redeploy)
+Log in at `/#staff` as an **owner** or **manager**. A **Menu & Prices** tab appears next to **Day View** (front desk
+logins never see it). Edit any price (whole rupees) or untick **Active**, press **Save changes** and confirm.
+The booking page, the guest menu and the phone / walk-in form all use the new price straight away; bookings already
+made keep the price they were booked at. Guests who were mid-booking at the old price are asked to refresh.
+
+## Adding or renaming treatments later
+That is still a seed change: edit `tenants/labella/catalog.json`, run `npm run seed:labella`, paste
+`supabase/seed/labella.sql` into the SQL Editor. Re-running the seed **never resets prices or on/off switches** that
+were set in the Menu & Prices tab (it only adds missing treatments/durations and updates names, descriptions, branches).
+To retire a treatment, untick every duration in the tab.
 
 ## Known limits
-- The staff screen reads the menu from the built page, not live from the database, so a price change needs the
-  seed AND a rebuild. The database always charges its own price and refuses a stale one ("prices were just updated").
+- Price and on/off edits are live. New treatments, new durations and renames are not (see above).
+- The built page still contains the original `catalog.json` menu as a fallback if the live menu cannot be fetched
+  (for example while offline). In that case the database still charges its own price and refuses a stale one.
 - Therapist names are shown with "she/her" wording in a few staff messages (unchanged from Client 1).

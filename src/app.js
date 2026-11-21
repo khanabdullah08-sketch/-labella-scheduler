@@ -37,13 +37,43 @@ const closeOf  = id => { const b = branchOf(id); return b && b.closeMin != null 
 /* ============================================================
    3. SERVICES MENUS  (each branch points at a named menu)
    ============================================================ */
-const MENU_LIST    = CFG.menus;
-const DEFAULT_MENU = MENU_LIST[CFG.defaultMenu];
-const MENUS   = Object.fromEntries(LOCATIONS.map(l => [l.id, MENU_LIST[l.menu]]));
-const menuFor = id => MENUS[id] || DEFAULT_MENU;
+/* The menus baked into the page (catalog.json) are only the starting point / offline fallback.
+   On the v2 backend loadLiveCatalog() replaces them with the live prices from get_catalog(). */
+let MENU_LIST = CFG.menus;
+let MENUS = {};
+const indexMenus = () => { MENUS = Object.fromEntries(LOCATIONS.map(l => [l.id, MENU_LIST[l.menu]])); };
+indexMenus();
+const defaultMenu = () => MENU_LIST[CFG.defaultMenu] || [];
+const menuFor = id => MENUS[id] || defaultMenu();
 
 /* Active menu — swapped when the guest picks a branch. Must be `let`, not `const`. */
-let SERVICES = DEFAULT_MENU;
+let SERVICES = defaultMenu();
+
+/** Fetch the live menu + prices (v2 only). Returns true when the page now shows live data.
+ *  Any failure keeps the baked-in menu, so the page still works; the database refuses a stale price anyway. */
+async function loadLiveCatalog() {
+    if (!V2) return false;
+    try {
+        const { data, error } = await sb.rpc('get_catalog', { p_slug: TENANT });
+        if (error || !data || !data.menus || typeof data.menus !== 'object') return false;
+        const live = {};
+        for (const [code, list] of Object.entries(data.menus)) {
+            live[code] = (Array.isArray(list) ? list : [])
+                .map(s => ({ ...s, options: (Array.isArray(s.options) ? s.options : [])
+                    .map(o => ({ duration: Number(o.duration), price: Number(o.price) })) }))
+                .filter(s => s.options.length > 0);          // every duration switched off = treatment hidden
+        }
+        MENU_LIST = { ...CFG.menus, ...live };
+        indexMenus();
+        SERVICES = bookingState.location ? menuFor(bookingState.location.id) : defaultMenu();
+        if (bookingState.step <= 2) { renderCategories(); renderServices('All'); }
+        dvFillSrv();
+        return true;
+    } catch (e) {
+        console.warn('Live menu unavailable, using the built-in menu.', e);
+        return false;
+    }
+}
 
 
 
@@ -112,6 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderServices('All');
     generateDates();
     dvInitPickers();
+    loadLiveCatalog();
 });
 
 /* ============================================================
@@ -502,7 +533,7 @@ async function resetApp() {
                      date: null, timeSlot: null, startMinutes: null, customer: {} };
     document.getElementById('bookingForm').reset();
     generateDates();
-        SERVICES = DEFAULT_MENU;
+    SERVICES = defaultMenu();
     renderCategories();
     renderServices('All');
     goToStep(1);
@@ -578,14 +609,19 @@ async function dvGate() {
         const { error } = await sb.auth.signInWithPassword({ email: email.trim(), password });
         if (error) { alert('Login failed: ' + error.message); return; }
     }
+    let role = null;
     if (V2) {
         const me = await sb.from('staff').select('role').limit(1);
         if (me.error || !(me.data && me.data.length)) {
             await sb.auth.signOut();
+            dvApplyRole(null);
             alert('This account is not set up as staff for this site. Ask the owner to add you.');
             return;
         }
+        role = me.data[0].role;
     }
+    dvApplyRole(role);                       // shows the "Menu & Prices" tab for owner / manager only
+    if (V2) await loadLiveCatalog();         // walk-in form uses today's live prices
     document.getElementById('dvModal').classList.remove('hidden');
     dvLoad();
 }
@@ -595,10 +631,164 @@ function dvClose() {
 }
 async function dvLogout() {
     await sb.auth.signOut();
+    dvApplyRole(null);                       // forget the role and any loaded price data
     dvClose();
     alert('Logged out.');
 }
 function dvShowAdd() { document.getElementById('dvAdd').classList.toggle('hidden'); }
+
+/* ============================================================
+   12b. MENU & PRICES  (owner / manager only, v2 backend)
+   The tab is hidden for every other role. That is a convenience only — the real protection is
+   the database: service_options can only be changed by owner / manager logins (RLS policy
+   options_write). A blocked update returns ZERO rows (not an error), so mpSave checks for that.
+   ============================================================ */
+const MP_MAX_PRICE = 1000000;                 // same limit as the check constraint on service_options.price
+let MP = { canEdit: false, view: 'day', model: null, rows: {} };
+
+const mpIsManager = role => role === 'owner' || role === 'manager';
+const mpPriceOk = raw => /^\d{1,7}$/.test(String(raw).trim()) && Number(raw) >= 1 && Number(raw) <= MP_MAX_PRICE;
+const mpDirty = r => Number(String(r.raw).trim()) !== r.orig.price || r.active !== r.orig.active;
+const mpDirtyRows = () => Object.values(MP.rows).filter(mpDirty);
+
+/** Called after login (role from the staff table) and after logout (role = null). */
+function dvApplyRole(role) {
+    MP.canEdit = V2 && mpIsManager(role);
+    MP.model = null; MP.rows = {};
+    document.getElementById('mpBody').innerHTML = '';
+    document.getElementById('dvTabs').classList[MP.canEdit ? 'remove' : 'add']('hidden');
+    mpShow('day');
+}
+function mpShow(which) {
+    const prices = which === 'prices' && MP.canEdit;
+    MP.view = prices ? 'prices' : 'day';
+    document.getElementById('mpView').classList[prices ? 'remove' : 'add']('hidden');
+    document.getElementById('dvView').classList[prices ? 'add' : 'remove']('hidden');
+    document.getElementById('dvTools').classList[prices ? 'add' : 'remove']('hidden');
+    document.getElementById('dvTools').classList[prices ? 'remove' : 'add']('contents');   // `contents` keeps the buttons in the toolbar row
+    const on = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-brand-800 text-white';
+    const off = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-brand-100 text-brand-800';
+    document.getElementById('dvTabDay').className = prices ? off : on;
+    document.getElementById('dvTabPrices').className = prices ? on : off;
+}
+function dvTab(which) {
+    if (MP.view === 'prices' && which !== 'prices' && mpDirtyRows().length &&
+        !confirm('You have unsaved price changes. Leave without saving?')) return;
+    mpShow(which);
+    if (MP.view === 'prices' && !MP.model) return mpLoad();
+}
+
+/** Read menus, treatments and durations (including switched-off ones) straight from the tables. */
+async function mpLoad(force) {
+    if (!MP.canEdit) return;
+    if (force && mpDirtyRows().length && !confirm('Reloading discards your unsaved price changes. Continue?')) return;
+    document.getElementById('mpBody').innerHTML = '<div class="p-6 text-sand-800 text-sm">Loading…</div>';
+    const [m, s, o] = await Promise.all([
+        sb.from('menus').select('id,code,name').order('name'),
+        sb.from('services').select('id,menu_id,code,category,name,sort,active').order('sort').order('code'),
+        sb.from('service_options').select('id,service_id,duration_min,price,active,sort').order('sort').order('duration_min')
+    ]);
+    const failed = m.error || s.error || o.error;
+    if (failed) {
+        document.getElementById('mpBody').innerHTML = '<div class="p-4 text-rose-700 text-sm">Could not load the menu: ' + esc(failed.message) + '</div>';
+        return;
+    }
+    MP.model = { menus: m.data || [], services: s.data || [], options: o.data || [] };
+    MP.rows = {};
+    for (const op of MP.model.options)
+        MP.rows[op.id] = { id: op.id, serviceId: op.service_id, duration: op.duration_min,
+                           orig: { price: op.price, active: !!op.active }, raw: String(op.price), active: !!op.active };
+    mpRender();
+}
+function mpRender() {
+    if (!MP.model) return;
+    const { menus, services, options } = MP.model;
+    // order the menus the way the branches are listed, and name each group after its branches
+    const rank = code => { const i = LOCATIONS.findIndex(l => l.menu === code); return i < 0 ? 999 : i; };
+    const html = [...menus].sort((a, b) => rank(a.code) - rank(b.code)).map(menu => {
+        const branches = LOCATIONS.filter(l => l.menu === menu.code).map(l => l.name);
+        const items = services.filter(sv => sv.menu_id === menu.id).map(sv => {
+            const opts = options.filter(op => op.service_id === sv.id);
+            if (!opts.length) return '';
+            return `<div class="py-2.5 border-t border-sand-200 first:border-t-0">
+                <div class="text-xs font-bold text-brand-900">${esc(sv.name)}
+                    <span class="font-normal text-sand-800">· ${esc(sv.category)}</span>
+                    ${sv.active ? '' : '<span class="ml-1 px-1.5 py-0.5 bg-rose-100 text-rose-800 rounded text-[10px]">treatment switched off</span>'}</div>
+                <div class="mt-1.5 space-y-1.5">${opts.map(op => {
+                    const r = MP.rows[op.id];
+                    return `<div id="mpRow_${esc(op.id)}" class="flex items-center gap-3 text-xs rounded-lg px-2 py-1 ${mpDirty(r) ? 'bg-amber-50' : ''}">
+                        <span class="w-16 text-sand-800">${r.duration} min</span>
+                        <label class="flex items-center gap-1">${esc(CFG.locale.currencySymbol)}
+                            <input type="number" min="1" max="${MP_MAX_PRICE}" step="1" inputmode="numeric" value="${esc(r.raw)}"
+                                   oninput="mpEdit('${esc(op.id)}','price',this.value)" class="w-24 p-1.5 border border-sand-200 rounded-lg"></label>
+                        <label class="flex items-center gap-1"><input type="checkbox" ${r.active ? 'checked' : ''}
+                                   onchange="mpEdit('${esc(op.id)}','active',this.checked)"> Active</label>
+                    </div>`;
+                }).join('')}</div></div>`;
+        }).join('');
+        return `<div class="bg-white border border-sand-200 rounded-xl p-4">
+            <div class="text-sm font-bold text-brand-900">${esc(branches.length ? branches.join(' · ') : menu.name)}</div>
+            <div class="text-[11px] text-sand-800 mb-1">${esc(menu.name)}</div>${items}</div>`;
+    }).join('');
+    document.getElementById('mpBody').innerHTML = html || '<div class="p-4 text-sm text-sand-800">No menu found for this site.</div>';
+    mpRefreshSave();
+}
+function mpRefreshSave() {
+    const n = mpDirtyRows().length;
+    const b = document.getElementById('mpSave');
+    b.disabled = n === 0;
+    b.innerText = n ? 'Save ' + n + ' change' + (n === 1 ? '' : 's') : 'Save changes';
+}
+function mpEdit(id, field, value) {
+    const r = MP.rows[id];
+    if (!r) return;
+    if (field === 'price') r.raw = String(value);
+    else r.active = !!value;
+    const row = document.getElementById('mpRow_' + id);
+    if (row) row.classList[mpDirty(r) ? 'add' : 'remove']('bg-amber-50');
+    mpRefreshSave();
+}
+
+async function mpSave(btn) {
+    const dirty = mpDirtyRows();
+    if (!MP.canEdit || !dirty.length) return;
+    const nameOf = r => {
+        const sv = MP.model.services.find(x => x.id === r.serviceId);
+        const menu = sv && MP.model.menus.find(x => x.id === sv.menu_id);
+        const br = menu ? LOCATIONS.filter(l => l.menu === menu.code).map(l => l.shortName || l.name).join('/') : '';
+        return (br ? br + ' · ' : '') + (sv ? sv.name : 'Treatment') + ' ' + r.duration + ' min';
+    };
+    const bad = dirty.filter(r => !mpPriceOk(r.raw));
+    if (bad.length) {
+        alert('Enter a whole-rupee price between 1 and ' + MP_MAX_PRICE.toLocaleString(CFG.locale.numberLocale) + ' for:\n' + bad.map(nameOf).join('\n'));
+        return;
+    }
+    const lines = dirty.map(r => nameOf(r) + ': ' + money(r.orig.price) + ' → ' + money(Number(r.raw)) +
+                                 (r.active !== r.orig.active ? (r.active ? '  (switched ON)' : '  (switched OFF)') : ''));
+    if (!confirm('Save ' + dirty.length + ' change(s)? They go live on the booking page immediately.\n\n' + lines.join('\n'))) return;
+
+    btn.disabled = true; btn.innerText = 'Saving…';
+    const results = await Promise.all(dirty.map(async r => {
+        const price = Number(String(r.raw).trim());
+        const { data, error } = await sb.from('service_options').update({ price, active: r.active }).eq('id', r.id).select('id,price,active');
+        if (error) return { r, ok: false, why: error.message };
+        // a login without permission gets no error, just no row back
+        if (!data || data.length !== 1) return { r, ok: false, why: 'not allowed (only an owner or manager can change prices)' };
+        r.orig = { price: data[0].price, active: !!data[0].active };
+        r.raw = String(data[0].price); r.active = !!data[0].active;
+        return { r, ok: true };
+    }));
+    const failed = results.filter(x => !x.ok);
+    for (const x of results) {
+        const o = x.ok && MP.model.options.find(z => z.id === x.r.id);
+        if (o) { o.price = x.r.orig.price; o.active = x.r.orig.active; }
+    }
+    mpRender();
+    await loadLiveCatalog();                  // this page now shows the new prices too
+    alert(failed.length
+        ? (results.length - failed.length) + ' saved, ' + failed.length + ' NOT saved:\n' + failed.map(x => nameOf(x.r) + ' — ' + x.why).join('\n')
+        : 'Saved. The booking page now shows the new prices.');
+}
 
 async function dvLoad() {
     DV.date   = document.getElementById('dvDate').value || ymdLocal(new Date());
@@ -736,6 +926,7 @@ async function dvAddBooking(btn) {
     const [sid, durStr, priceStr] = document.getElementById('aSrv').value.split('|');
     const srv   = menuFor(locId).find(s => s.id === sid);
     const duration = Number(durStr), price = Number(priceStr);
+    if (!srv) { alert('Choose a treatment first (this branch may have no active treatments).'); return; }
     const date  = document.getElementById('aDate').value;
     const start = textToMins(document.getElementById('aTime').value);
     const name  = document.getElementById('aName').value.trim();

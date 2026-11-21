@@ -114,7 +114,7 @@ join (values
   ('df18', 105, 11999, 0)
 ) as v(code, duration_min, price, sort) on v.code = s.code
 where t.slug = 'labella' and m.code = 'def'
-on conflict (service_id, duration_min) do update set price = excluded.price, sort = excluded.sort;
+on conflict (service_id, duration_min) do update set sort = excluded.sort;   -- prices and on/off are owned by the Menu & Prices tab: re-running this file never resets them
 
 -- ===== PART 8: services of menu cp =====
 insert into public.services (tenant_id, menu_id, code, category, name, description, sort)
@@ -181,6 +181,6 @@ join (values
   ('cp16', 105, 13999, 0)
 ) as v(code, duration_min, price, sort) on v.code = s.code
 where t.slug = 'labella' and m.code = 'cp'
-on conflict (service_id, duration_min) do update set price = excluded.price, sort = excluded.sort;
+on conflict (service_id, duration_min) do update set sort = excluded.sort;   -- prices and on/off are owned by the Menu & Prices tab: re-running this file never resets them
 
 commit;
