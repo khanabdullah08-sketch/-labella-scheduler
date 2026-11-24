@@ -564,10 +564,11 @@ function dvInitPickers() {
     document.getElementById('aTime').value = pad2(Math.floor(nm / 60)) + ':' + pad2(nm % 60);
     document.getElementById('aAddonWrap').classList[FEATURES.addons ? 'remove' : 'add']('hidden');
 
-    document.getElementById('aLoc').onchange  = () => { dvFillSrv(); aUpdateEnds(); aTherRefresh(); };
-    document.getElementById('aSrv').onchange  = () => { aUpdateEnds(); aTherRefresh(); };
-    document.getElementById('aTime').oninput  = () => { aUpdateEnds(); aTherRefresh(); };
-    document.getElementById('aDate').onchange = aTherRefresh;
+    document.getElementById('aLoc').onchange  = () => { dvFillSrv(); aUpdateEnds(); aTherRefresh(); aTher2Refresh(); };
+    document.getElementById('aSrv').onchange  = () => { aUpdateEnds(); aTherRefresh(); aTher2Refresh(); };
+    document.getElementById('aTime').oninput  = () => { aUpdateEnds(); aTherRefresh(); aTher2Refresh(); };
+    document.getElementById('aDate').onchange = () => { aTherRefresh(); aTher2Refresh(); };
+    document.getElementById('aTher').onchange = aTher2Refresh;
     aUpdateEnds();
 
     document.getElementById('dvDate').onchange   = dvLoad;
@@ -662,6 +663,7 @@ const mpDirtyRows = () => Object.values(MP.rows).filter(mpDirty);
 function dvApplyRole(role) {
     MP.canEdit = V2 && mpIsManager(role);
     MP.model = null; MP.rows = {}; MP.form = null;
+    expApplyRole(role);
     document.getElementById('mpBody').innerHTML = '';
     mpFormRender();
     document.getElementById('dvTabs').classList[MP.canEdit ? 'remove' : 'add']('hidden');
@@ -991,25 +993,32 @@ async function dvLoad() {
         return;
     }
     DV.rows = (data || []).sort((a, b) => a.start_min - b.start_min);
-    dvKpi(); dvGrid(); dvList(); thLoad();
+    dvKpi(); dvGrid(); dvList(); thLoad(); expLoad();
 }
 
 function dvKpi() {
     const live = DV.rows.filter(b => b.status === 'confirmed');
-    const addons = live.reduce((s, b) => s + (b.addon_amt || 0), 0);
-    const rev = live.reduce((s, b) => s + (b.price || 0) + (b.addon_amt || 0), 0);
-    const isToday = DV.date === ymdLocal(new Date());
-    const n = nowMins();
-    const busy = live.filter(b => b.start_min <= n && b.end_min > n).length;
-    const total = DV.branch === 'all' ? LOCATIONS.reduce((s, l) => s + capOf(l.id), 0) : capOf(DV.branch);
+    const addons   = live.reduce((s, b) => s + (b.addon_amt    || 0), 0);
+    const discounts= live.reduce((s, b) => s + (b.discount_amt || 0), 0);
+    const gross    = live.reduce((s, b) => s + (b.price || 0) + (b.addon_amt || 0), 0);
+    const netRev   = gross - discounts;
+    const isToday  = DV.date === ymdLocal(new Date());
+    const n        = nowMins();
+    const busy     = live.filter(b => b.start_min <= n && b.end_min > n).length;
+    const total    = DV.branch === 'all' ? LOCATIONS.reduce((s, l) => s + capOf(l.id), 0) : capOf(DV.branch);
+    const pmBreak  = ['cash','upi','card','pending'].map(pm => {
+        const c = live.filter(b => b.payment_method === pm).length;
+        return c ? pm.charAt(0).toUpperCase() + pm.slice(1) + ' ' + c : '';
+    }).filter(Boolean).join(' · ') || 'All pending';
     const card = (a, b, c) => `<div class="bg-white border border-sand-200 rounded-xl p-3">
         <div class="text-[10px] uppercase tracking-wide text-sand-800">${a}</div>
         <div class="text-xl font-extrabold text-brand-900">${b}</div>
         <div class="text-[10px] text-sand-800">${c}</div></div>`;
     document.getElementById('dvKpi').innerHTML =
         card('Bookings', live.length, (DV.rows.length - live.length) + ' cancelled / no-show') +
-        card('Revenue', money(rev), addons ? 'incl. ' + money(addons) + ' add-ons' : 'expected for the day') +
-        card('Phone / walk-in', live.filter(b => b.source !== 'online').length, 'of ' + live.length + ' total') +
+        card('Net Revenue', money(netRev), addons ? 'incl. ' + money(addons) + ' add-ons' : 'expected for the day') +
+        card('Discounts', discounts ? '-' + money(discounts) : '—', discounts ? 'applied today' : 'none today') +
+        card('Payment Modes', pmBreak.split(' · ')[0] || '—', pmBreak) +
         card('In session now', isToday ? busy + ' / ' + total : '—', isToday ? 'rooms occupied' : 'not today');
 }
 
@@ -1082,6 +1091,10 @@ function dvList() {
         const tag = b.status === 'cancelled' ? 'bg-rose-100 text-rose-800'
                   : b.status === 'noshow'    ? 'bg-amber-100 text-amber-800'
                                              : 'bg-emerald-100 text-emerald-800';
+        const pmCls = { cash: 'bg-teal-100 text-teal-800', upi: 'bg-cyan-100 text-cyan-800',
+                        card: 'bg-sky-100 text-sky-800', pending: 'bg-sand-100 text-sand-800' };
+        const pm = b.payment_method || 'pending';
+        const netTotal = (b.price || 0) + (b.addon_amt || 0) - (b.discount_amt || 0);
         return `<div class="bg-white border border-sand-200 rounded-xl p-3 ${dead ? 'opacity-55' : ''}">
             <div class="flex flex-wrap items-center gap-2 text-xs">
                 <span class="font-extrabold text-brand-900">${minsToText(b.start_min)}–${minsToText(b.end_min)}</span>
@@ -1089,18 +1102,25 @@ function dvList() {
                 <span class="px-2 py-0.5 rounded-full bg-sand-100 text-sand-800">${esc(b.source)}</span>
                 <span class="px-2 py-0.5 rounded-full ${b.room_no ? 'bg-sand-100 text-sand-800 font-semibold' : 'bg-amber-100 text-amber-800'}">${b.room_no ? 'Room ' + b.room_no : 'no room'}</span>
                 <span class="px-2 py-0.5 rounded-full ${b.therapist_name ? 'bg-indigo-100 text-indigo-800 font-semibold' : 'bg-amber-100 text-amber-800'}">${b.therapist_name ? esc(b.therapist_name) : 'no therapist'}</span>
+                <span class="px-2 py-0.5 rounded-full ${pmCls[pm] || 'bg-sand-100 text-sand-800'} font-semibold">${pm.charAt(0).toUpperCase() + pm.slice(1)}</span>
                 <span class="ml-auto font-mono text-sand-800">${esc(b.ref || '--')}</span>
             </div>
             <div class="mt-1 text-sm font-bold text-brand-900">${esc(b.name)} · ${esc(b.service_name)}</div>
-            <div class="text-xs text-sand-800">${esc(b.loc_name)} · ${b.duration} mins · ${money(b.price)}${b.addon_amt ? ' + ' + money(b.addon_amt) + ' add-on' : ''}${b.notes && b.notes !== 'None' ? ' · ' + esc(b.notes) : ''}</div>
+            <div class="text-xs text-sand-800">${esc(b.loc_name)} · ${b.duration} mins · ${money(b.price)}${b.addon_amt ? ' + ' + money(b.addon_amt) + ' add-on' : ''}${b.discount_amt ? ' − ' + money(b.discount_amt) + ' disc' : ''} = <strong>${money(netTotal)}</strong>${b.notes && b.notes !== 'None' ? ' · ' + esc(b.notes) : ''}</div>
             ${b.addon_text ? `<div class="text-xs text-indigo-800 font-semibold">Add-on: ${esc(b.addon_text)}${b.addon_amt ? ' · ' + money(b.addon_amt) : ''}</div>` : ''}
-            ${b.orig_duration ? `<div class="text-xs text-amber-800 font-semibold">Changed from ${b.orig_duration} min · ${money(b.orig_price)} · by ${esc(b.adjusted_by || 'staff')} at ${esc(new Date(b.adjusted_at).toLocaleTimeString(CFG.locale.numberLocale, { hour: 'numeric', minute: '2-digit' }))}</div>` : ''}
+            ${b.discount_text ? `<div class="text-xs text-rose-700 font-semibold">Discount: ${esc(b.discount_text)} · -${money(b.discount_amt)}</div>` : ''}
+            ${b.therapist_id_2 ? `<div class="text-xs text-purple-800 font-semibold">2nd Therapist ID: ${esc(b.therapist_id_2)}</div>` : ''}
+            ${b.orig_service_name ? `<div class="text-xs text-amber-800 font-semibold">Changed from: ${esc(b.orig_service_name)} on ${esc(b.orig_date || b.date)} @ ${b.orig_start_min != null ? minsToText(b.orig_start_min) : '—'} · by ${esc(b.adjusted_by || 'staff')} at ${b.adjusted_at ? esc(new Date(b.adjusted_at).toLocaleTimeString(CFG.locale.numberLocale, { hour: 'numeric', minute: '2-digit' })) : '—'}</div>` :
+              (b.orig_duration ? `<div class="text-xs text-amber-800 font-semibold">Changed from ${b.orig_duration} min · ${money(b.orig_price)} · by ${esc(b.adjusted_by || 'staff')} at ${b.adjusted_at ? esc(new Date(b.adjusted_at).toLocaleTimeString(CFG.locale.numberLocale, { hour: 'numeric', minute: '2-digit' })) : '—'}</div>` : '')}
             <div class="mt-2 flex flex-wrap gap-2 no-print">
                 <a href="tel:${CFG.locale.dialCode}${esc(b.phone)}" class="px-2.5 py-1 bg-brand-100 text-brand-800 rounded-lg text-[11px] font-semibold">Call</a>
                 <a href="https://wa.me/${CFG.locale.countryCode}${esc(b.phone)}" target="_blank" class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg text-[11px] font-semibold">WhatsApp</a>
                 ${dead ? '' : `<button onclick="dvAssign('${b.id}')" class="px-2.5 py-1 bg-indigo-100 text-indigo-800 rounded-lg text-[11px] font-semibold">${b.therapist_name ? 'Change therapist' : 'Assign therapist'}</button>`}
+                ${dead ? '' : `<button onclick="dvAssign2('${b.id}')" class="px-2.5 py-1 bg-purple-100 text-purple-800 rounded-lg text-[11px] font-semibold">${b.therapist_id_2 ? 'Change 2nd therapist' : 'Assign 2nd therapist'}</button>`}
                 ${dead || !FEATURES.roomAssign ? '' : dvRoomSelect(b)}
                 ${dead || !FEATURES.adjustSession ? '' : `<button onclick="dvDurToggle('${b.id}', this)" class="px-2.5 py-1 bg-violet-100 text-violet-800 rounded-lg text-[11px] font-semibold">Change duration</button>`}
+                ${dead ? '' : `<button onclick="dvRescheduleToggle('${b.id}', this)" class="px-2.5 py-1 bg-orange-100 text-orange-800 rounded-lg text-[11px] font-semibold">Change Therapy / Time</button>`}
+                ${dead ? '' : `<button onclick="dvBillingToggle('${b.id}', this)" class="px-2.5 py-1 bg-teal-100 text-teal-800 rounded-lg text-[11px] font-semibold">Billing / Payment</button>`}
                 ${dead ? '' : `<button onclick="dvMark('${b.id}','noshow')" class="px-2.5 py-1 bg-amber-100 text-amber-800 rounded-lg text-[11px] font-semibold">No-show</button>
                 <button onclick="dvMark('${b.id}','cancelled')" class="px-2.5 py-1 bg-rose-100 text-rose-800 rounded-lg text-[11px] font-semibold">Cancel</button>`}
             </div></div>`;
@@ -1117,12 +1137,16 @@ async function dvMark(id, status) {
 
 function staffBookingReason(code) {
     return ({
-        forbidden: 'your account is not allowed to book for this branch',
-        invalid:   'that branch, treatment or duration is not on the menu',
-        badname:   'the guest name is too short',
-        badphone:  'the phone number is not valid',
-        closed:    'that time is outside the branch opening hours',
-        badaddon:  'the add-on needs a description and an amount between 0 and ' + ADDON_MAX.toLocaleString(CFG.locale.numberLocale)
+        forbidden:            'your account is not allowed to book for this branch',
+        invalid:              'that branch, treatment or duration is not on the menu',
+        badname:              'the guest name is too short',
+        badphone:             'the phone number is not valid',
+        closed:               'that time is outside the branch opening hours',
+        badaddon:             'the add-on needs a description and an amount between 0 and ' + ADDON_MAX.toLocaleString(CFG.locale.numberLocale),
+        baddiscount:          'discount amount exceeds the booking total, or reason is too long (80 chars max)',
+        th2_wrong_branch:     '2nd therapist does not belong to this branch',
+        th2_busy:             '2nd therapist is already booked at that time',
+        th1_busy_as_secondary:'primary therapist is already a secondary on another booking at that time'
     })[code] || ('unexpected result: ' + code);
 }
 async function dvAddBooking(btn) {
@@ -1138,10 +1162,14 @@ async function dvAddBooking(btn) {
     const phone = cleanPhone(document.getElementById('aPhone').value);
     const source= document.getElementById('aSource').value;
     const notes = document.getElementById('aNotes').value.trim() || 'None';
-    const therId= document.getElementById('aTher').value || null;
-    const ther  = (TH.cands || []).find(c => c.id === therId);
+    const therId  = document.getElementById('aTher').value || null;
+    const ther    = (TH.cands || []).find(c => c.id === therId);
+    const ther2Id = document.getElementById('aTher2').value || null;
+    const payMethod = document.getElementById('aPayMethod').value || 'pending';
     const addonText = FEATURES.addons ? document.getElementById('aAddon').value.trim() : '';
     const addonAmt  = FEATURES.addons ? Math.round(Number(document.getElementById('aAddonAmt').value) || 0) : 0;
+    const discText  = document.getElementById('aDiscText').value.trim();
+    const discAmt   = Math.round(Number(document.getElementById('aDiscAmt').value) || 0);
 
     if (name.length < 2) { alert('Enter the guest name.'); return; }
     if (!PHONE_RE.test(phone)) { alert(CFG.locale.phoneErrorStaff); return; }
@@ -1150,6 +1178,8 @@ async function dvAddBooking(btn) {
     if (start + duration > closeOf(locId)) { alert('That session would run past ' + minsToText(closeOf(locId)) + '.'); return; }
     if (addonAmt < 0 || addonAmt > ADDON_MAX) { alert('Add-on amount must be between 0 and ' + ADDON_MAX.toLocaleString(CFG.locale.numberLocale) + '.'); return; }
     if (addonAmt > 0 && !addonText) { alert('Describe the add-on, or clear the amount.'); return; }
+    if (discAmt < 0) { alert('Discount amount cannot be negative.'); return; }
+    if (discText.length > 80) { alert('Discount reason must be 80 characters or less.'); return; }
 
     btn.disabled = true; btn.innerText = 'Saving…';
     let ref = CFG.brand.refPrefix + Math.floor(100000 + Math.random() * 900000);
@@ -1161,7 +1191,10 @@ async function dvAddBooking(btn) {
         const { data, error } = await sb.rpc('staff_create_booking', {
             p_branch: locId, p_service: srv.id, p_duration: duration, p_date: date, p_start: start,
             p_name: name, p_phone: phone, p_notes: notes, p_source: source,
-            p_addon_text: addonText || null, p_addon_amt: addonAmt
+            p_addon_text: addonText || null, p_addon_amt: addonAmt,
+            p_payment_method: payMethod,
+            p_discount_text: discText || null, p_discount_amt: discAmt,
+            p_therapist_id_2: ther2Id || null
         });
         if (error) hardError = error.message;
         else if (data.status === 'ok') { newId = data.id; ref = data.ref; }
@@ -1196,23 +1229,29 @@ async function dvAddBooking(btn) {
     }
     alert(msg);
 
-    document.getElementById('aName').value = '';
-    document.getElementById('aPhone').value = '';
-    document.getElementById('aNotes').value = '';
-    document.getElementById('aAddon').value = '';
+    document.getElementById('aName').value     = '';
+    document.getElementById('aPhone').value    = '';
+    document.getElementById('aNotes').value    = '';
+    document.getElementById('aAddon').value    = '';
     document.getElementById('aAddonAmt').value = '';
-    document.getElementById('dvDate').value = date;
+    document.getElementById('aDiscText').value = '';
+    document.getElementById('aDiscAmt').value  = '';
+    document.getElementById('aPayMethod').value= 'pending';
+    document.getElementById('dvDate').value    = date;
     dvLoad();
 }
 
 function dvCsv() {
     const cols = ['ref','date','start','end','loc_name','service_name','duration','price',
-                  ...(FEATURES.addons ? ['addon_text','addon_amt','total'] : []),
-                  'room_no','therapist_name','name','phone','status','source','created_by','notes'];
+                  'addon_text','addon_amt','discount_text','discount_amt','payment_method','net_total',
+                  'room_no','therapist_name','therapist_2','name','phone','status','source','created_by','notes'];
     const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
     const body = DV.rows.map(r => cols.map(c =>
-        q(c === 'start' ? minsToText(r.start_min) : c === 'end' ? minsToText(r.end_min)
-          : c === 'total' ? (r.price || 0) + (r.addon_amt || 0) : r[c])).join(',')).join('\n');
+        q(c === 'start'      ? minsToText(r.start_min)
+        : c === 'end'        ? minsToText(r.end_min)
+        : c === 'net_total'  ? (r.price || 0) + (r.addon_amt || 0) - (r.discount_amt || 0)
+        : c === 'therapist_2'? (r.therapist_id_2 || '')
+        : r[c])).join(',')).join('\n');
     const link = document.createElement('a');
     link.href = URL.createObjectURL(new Blob([cols.join(',') + '\n' + body], { type: 'text/csv;charset=utf-8;' }));
     link.download = CFG.brand.csvFilePrefix + DV.branch + '_' + DV.date + '.csv';
@@ -1454,6 +1493,42 @@ async function thCandidates(locId, date, start, dur) {
     }).sort((a, b) => a.arrival - b.arrival || a.seq - b.seq);
 }
 
+/* ---- 2nd therapist dropdown for the walk-in form ---- */
+let aTher2Timer = null;
+const aTher2Refresh = () => { clearTimeout(aTher2Timer); aTher2Timer = setTimeout(aFillTherapists2, 350); };
+
+async function aFillTherapists2() {
+    const sel  = document.getElementById('aTher2');
+    const note = document.getElementById('aTher2Note');
+    if (!sel) return;
+    const locId = document.getElementById('aLoc').value;
+    const date  = document.getElementById('aDate').value;
+    const start = textToMins(document.getElementById('aTime').value);
+    const dur   = Number((document.getElementById('aSrv').value || '').split('|')[1]) || 60;
+    const th1   = document.getElementById('aTher').value;
+
+    if (!locId || !date || start === null) {
+        sel.innerHTML = '<option value="">— No 2nd therapist —</option>';
+        note.innerHTML = '&nbsp;'; return;
+    }
+    sel.innerHTML = '<option value="">Checking…</option>';
+    const cands = await thCandidates(locId, date, start, dur);
+    // exclude whoever is already picked as therapist 1
+    const eligible = cands.filter(c => c.id !== th1);
+    const free = eligible.filter(c => c.ok);
+
+    sel.innerHTML = '<option value="">— No 2nd therapist —</option>' +
+        eligible.map(c => `<option value="${c.id}"${c.ok ? '' : ' disabled'}>${esc(c.name)} · ${minsToText(c.arrival)}${c.ok ? '' : ' — ' + esc(c.why)}</option>`).join('');
+
+    if (free.length) {
+        note.innerText = free.length + ' therapist(s) available as 2nd.';
+        note.className = 'text-[11px] text-emerald-700 mt-1';
+    } else {
+        note.innerText = eligible.length ? 'No 2nd therapist free for this slot.' : 'No other therapists on roster.';
+        note.className = 'text-[11px] text-sand-800 mt-1';
+    }
+}
+
 /* ---- auto-preselect the next therapist by arrival sequence ---- */
 async function aFillTherapists() {
     const sel  = document.getElementById('aTher');
@@ -1501,7 +1576,29 @@ async function dvAssign(id) {
     if (!Number.isInteger(idx) || idx < 0 || idx > cands.length) { alert('That is not a valid number.'); return; }
     const t = idx === 0 ? null : cands[idx - 1];
 
-    const { data, error } = await sb.rpc('assign_therapist', { p_booking_id: id, p_therapist_id: t ? t.id : null });
+    const { data, error } = await sb.rpc('assign_therapist', { p_booking_id: id, p_therapist_id: t ? t.id : null, p_slot: 'primary' });
+    if (error) { alert('Could not assign: ' + error.message); return; }
+    if (data !== 'ok') { alert('Not assigned — ' + thReason(data) + '.'); return; }
+    dvLoad();
+}
+
+/* ---- assign or change the 2nd therapist on an existing booking ---- */
+async function dvAssign2(id) {
+    const b = DV.rows.find(r => r.id === id); if (!b) return;
+    const cands = await thCandidates(b.loc_id, b.date, b.start_min, b.duration);
+    // exclude primary therapist
+    const eligible = cands.filter(c => c.id !== b.therapist_id);
+    if (!eligible.length) { alert('No other therapists are on the roster for ' + b.loc_name + ' on ' + b.date + '.'); return; }
+
+    const list = eligible.map((c, i) => (i + 1) + '. ' + c.name + ' (' + minsToText(c.arrival) + ') — ' + (c.ok ? 'FREE' : c.why)).join('\n');
+    const pick = prompt('Assign a 2nd therapist to ' + b.name + ', ' + minsToText(b.start_min) + '–' + minsToText(b.end_min) +
+                        '\n\n' + list + '\n\nType the number, or 0 to remove 2nd therapist:');
+    if (pick === null) return;
+    const idx = Number(pick);
+    if (!Number.isInteger(idx) || idx < 0 || idx > eligible.length) { alert('That is not a valid number.'); return; }
+    const t = idx === 0 ? null : eligible[idx - 1];
+
+    const { data, error } = await sb.rpc('assign_therapist', { p_booking_id: id, p_therapist_id: t ? t.id : null, p_slot: 'secondary' });
     if (error) { alert('Could not assign: ' + error.message); return; }
     if (data !== 'ok') { alert('Not assigned — ' + thReason(data) + '.'); return; }
     dvLoad();
@@ -1598,4 +1695,237 @@ async function dvDurSave(id) {
     else if (data !== 'ok') alert('Unexpected result: ' + data);
     dvLoad();
 }
+
+/* ============================================================
+   15. CHANGE THERAPY / TIME (reschedule_booking)
+   ============================================================ */
+function dvRescheduleToggle(id, btn) {
+    const b = DV.rows.find(r => r.id === id); if (!b) return;
+    const row  = btn.parentElement;
+    const card = row.parentElement;
+    const open = card.querySelector(':scope > .reschedule-panel');
+    if (open) { const same = open.dataset.id === id; open.remove(); if (same) return; }
+
+    const srv = menuFor(b.loc_id);
+    const opts = srv.flatMap(s => s.options.map(o =>
+        `<option value="${s.id}|${o.duration}|${o.price}"${b.service_id === s.id && b.duration === o.duration ? ' selected' : ''}>${esc(s.name)} — ${o.duration}m — ${money(o.price)}</option>`
+    )).join('');
+
+    row.insertAdjacentHTML('afterend',
+        `<div class="reschedule-panel mt-2 p-2.5 bg-orange-50 border border-orange-200 rounded-lg space-y-2" data-id="${id}">
+            <div class="text-[11px] text-sand-800 font-semibold">Change Therapy / Time — ${esc(b.name)}</div>
+            <div class="text-[11px] text-sand-800">Now: <strong>${esc(b.service_name)}</strong> on ${b.date} @ ${minsToText(b.start_min)}</div>
+            <div class="grid sm:grid-cols-3 gap-2 text-xs">
+                <select id="rs-srv-${id}" class="p-2 border border-sand-200 rounded-lg sm:col-span-3">${opts}</select>
+                <input id="rs-date-${id}" type="date" value="${b.date}" class="p-2 border border-sand-200 rounded-lg">
+                <input id="rs-time-${id}" type="time" step="300" value="${pad2(Math.floor(b.start_min/60))}:${pad2(b.start_min%60)}" class="p-2 border border-sand-200 rounded-lg">
+                <button onclick="dvRescheduleSave('${id}', this)" class="py-2 bg-orange-600 text-white rounded-lg font-bold">Save Change</button>
+            </div>
+        </div>`);
+}
+
+async function dvRescheduleSave(id, btn) {
+    const b = DV.rows.find(r => r.id === id); if (!b) return;
+    const srvVal = document.getElementById('rs-srv-' + id).value;
+    const [sid, durStr] = srvVal.split('|');
+    const dur = Number(durStr);
+    const dateVal = document.getElementById('rs-date-' + id).value;
+    const start  = textToMins(document.getElementById('rs-time-' + id).value);
+    if (start === null) { alert('Enter a valid start time.'); return; }
+
+    btn.disabled = true; btn.innerText = 'Saving…';
+    let soId = null;
+    if (V2 && sid && dur) {
+        const { data: soData } = await sb.from('service_options')
+            .select('id').eq('service_id', sid).eq('duration_min', dur).eq('active', true).limit(1);
+        if (soData && soData.length) soId = soData[0].id;
+    }
+
+    const sameService = b.service_id === sid && b.duration === dur;
+    if (sameService && b.date === dateVal && b.start_min === start) {
+        btn.disabled = false; btn.innerText = 'Save Change';
+        alert('Nothing changed.'); return;
+    }
+
+    const { data, error } = await sb.rpc('reschedule_booking', {
+        p_booking_id: id,
+        p_service_option_id: soId || null,
+        p_date: dateVal,
+        p_start_min: start
+    });
+    btn.disabled = false; btn.innerText = 'Save Change';
+    if (error) { alert('Could not save: ' + error.message); return; }
+    const rsMsg = { no_change: 'Nothing changed.', not_confirmed: 'Only confirmed bookings can be rescheduled.',
+        invalid: 'That treatment is not on this branch\'s menu.', closed: 'That time is outside the branch opening hours.',
+        therapist_busy: 'The primary therapist has another booking at that time.',
+        th2_busy: 'The 2nd therapist has another booking at that time.',
+        room_busy: 'The room is busy at the new time.',
+        centre_full: 'The ' + CFG.labels.branchWord + ' is fully booked at the new time.',
+        no_booking: 'Booking not found or not yours to change.' }[data];
+    if (rsMsg) alert(rsMsg);
+    else if (data !== 'ok') alert('Unexpected result: ' + data);
+    dvLoad();
+}
+
+/* ============================================================
+   16. BILLING / PAYMENT EDITOR (update_booking_billing)
+   ============================================================ */
+function dvBillingToggle(id, btn) {
+    const b = DV.rows.find(r => r.id === id); if (!b) return;
+    const row  = btn.parentElement;
+    const card = row.parentElement;
+    const open = card.querySelector(':scope > .billing-panel');
+    if (open) { const same = open.dataset.id === id; open.remove(); if (same) return; }
+
+    const pmOpts = ['pending','cash','upi','card'].map(pm =>
+        `<option value="${pm}"${(b.payment_method || 'pending') === pm ? ' selected' : ''}>${pm.charAt(0).toUpperCase() + pm.slice(1)}</option>`
+    ).join('');
+
+    row.insertAdjacentHTML('afterend',
+        `<div class="billing-panel mt-2 p-2.5 bg-teal-50 border border-teal-200 rounded-lg space-y-2" data-id="${id}">
+            <div class="text-[11px] text-sand-800 font-semibold">Billing / Payment — ${esc(b.name)}</div>
+            <div class="grid sm:grid-cols-2 gap-2 text-xs">
+                <select id="bl-pm-${id}" class="p-2 border border-sand-200 rounded-lg">${pmOpts}</select>
+                <div></div>
+                <input id="bl-addon-${id}" maxlength="80" value="${esc(b.addon_text || '')}" placeholder="Add-on description" class="p-2 border border-sand-200 rounded-lg">
+                <input id="bl-addonamt-${id}" type="number" min="0" max="100000" step="1" inputmode="numeric" value="${b.addon_amt || 0}" placeholder="Add-on ${esc(CFG.locale.currencySymbol)}" class="p-2 border border-sand-200 rounded-lg">
+                <input id="bl-disc-${id}" maxlength="80" value="${esc(b.discount_text || '')}" placeholder="Discount reason" class="p-2 border border-sand-200 rounded-lg">
+                <input id="bl-discamt-${id}" type="number" min="0" max="100000" step="1" inputmode="numeric" value="${b.discount_amt || 0}" placeholder="Discount ${esc(CFG.locale.currencySymbol)}" class="p-2 border border-sand-200 rounded-lg">
+            </div>
+            <button onclick="dvBillingSave('${id}', this)" class="w-full py-2 bg-teal-700 text-white rounded-lg font-bold text-xs">Save Billing</button>
+        </div>`);
+}
+
+async function dvBillingSave(id, btn) {
+    const b = DV.rows.find(r => r.id === id); if (!b) return;
+    const pm       = document.getElementById('bl-pm-' + id).value;
+    const addonTxt = document.getElementById('bl-addon-' + id).value.trim();
+    const addonAmt = Math.round(Number(document.getElementById('bl-addonamt-' + id).value) || 0);
+    const discTxt  = document.getElementById('bl-disc-' + id).value.trim();
+    const discAmt  = Math.round(Number(document.getElementById('bl-discamt-' + id).value) || 0);
+
+    if (addonAmt > 0 && !addonTxt) { alert('Describe the add-on, or set amount to 0.'); return; }
+    if (addonTxt.length > 80)      { alert('Add-on description max 80 characters.'); return; }
+    if (discTxt.length > 80)       { alert('Discount reason max 80 characters.'); return; }
+    if (discAmt < 0)               { alert('Discount amount cannot be negative.'); return; }
+
+    btn.disabled = true; btn.innerText = 'Saving…';
+    const { data, error } = await sb.rpc('update_booking_billing', {
+        p_booking_id:     id,
+        p_payment_method: pm,
+        p_addon_text:     addonTxt || null,
+        p_addon_amt:      addonAmt,
+        p_discount_text:  discTxt || null,
+        p_discount_amt:   discAmt
+    });
+    btn.disabled = false; btn.innerText = 'Save Billing';
+    if (error) { alert('Could not save: ' + error.message); return; }
+    const blMsg = { not_confirmed: 'Only confirmed bookings can be edited.',
+        badaddon: 'Add-on needs a description and a valid amount.',
+        baddiscount: 'Discount exceeds the booking total, or reason is too long.',
+        invalid: 'Invalid payment method.',
+        no_booking: 'Booking not found or not yours to change.' }[data];
+    if (blMsg) alert(blMsg);
+    else if (data !== 'ok') alert('Unexpected result: ' + data);
+    dvLoad();
+}
+
+/* ============================================================
+   17. EXPENSES  (expenses table)
+   ============================================================ */
+let EXP = { rows: [], canEdit: false };
+
+function expApplyRole(role) { EXP.canEdit = role === 'owner' || role === 'manager'; }
+function expToggleAdd() { document.getElementById('expAddForm').classList.toggle('hidden'); }
+
+async function expLoad() {
+    const branchId = document.getElementById('dvBranch').value;
+    const date     = document.getElementById('dvDate').value || ymdLocal(new Date());
+    const listEl   = document.getElementById('expList');
+    const sumEl    = document.getElementById('expSummary');
+    if (!listEl || !sumEl) return;
+    if (branchId === 'all') {
+        listEl.innerHTML = '<div class="text-sand-800 py-2">Select a single branch to view expenses.</div>';
+        sumEl.innerHTML = ''; EXP.rows = []; return;
+    }
+    const { data, error } = await sb.from('expenses').select('*')
+        .eq('branch_id', branchId).eq('expense_date', date).order('created_at', { ascending: true });
+    if (error) { listEl.innerHTML = '<div class="text-rose-700">Could not load expenses: ' + esc(error.message) + '</div>'; return; }
+    EXP.rows = data || [];
+    expRender();
+}
+
+function expRender() {
+    const listEl = document.getElementById('expList');
+    const sumEl  = document.getElementById('expSummary');
+    if (!listEl || !sumEl) return;
+    if (!EXP.rows.length) { listEl.innerHTML = '<div class="text-sand-800 py-1">No expenses logged for this date.</div>'; sumEl.innerHTML = ''; return; }
+    const pmCls = { cash: 'bg-teal-100 text-teal-800', upi: 'bg-cyan-100 text-cyan-800', card: 'bg-sky-100 text-sky-800' };
+    listEl.innerHTML = EXP.rows.map(e => {
+        const pc = pmCls[e.payment_mode] || 'bg-sand-100 text-sand-800';
+        return `<div class="flex items-start justify-between gap-2 py-1.5 border-b border-sand-100 last:border-0">
+            <div class="flex-1 min-w-0"><span class="font-semibold text-brand-900 break-words">${esc(e.description)}</span>
+                <span class="ml-2 px-1.5 py-0.5 rounded text-[10px] font-semibold ${pc}">${e.payment_mode}</span></div>
+            <div class="font-bold text-brand-900 whitespace-nowrap">${money(e.amount)}</div>
+            ${EXP.canEdit ? `<button onclick="expEdit('${e.id}')" class="px-2 py-0.5 bg-sand-100 text-sand-800 rounded text-[10px] font-semibold no-print">Edit</button>
+            <button onclick="expDelete('${e.id}')" class="px-2 py-0.5 bg-rose-100 text-rose-800 rounded text-[10px] font-semibold no-print">Del</button>` : ''}</div>`;
+    }).join('');
+    const totalExp = EXP.rows.reduce((s, e) => s + e.amount, 0);
+    const cashExp  = EXP.rows.filter(e => e.payment_mode === 'cash').reduce((s, e) => s + e.amount, 0);
+    const live     = DV.rows.filter(b => b.status === 'confirmed');
+    const cashRev  = live.filter(b => b.payment_method === 'cash').reduce((s, b) => s + (b.price || 0) + (b.addon_amt || 0) - (b.discount_amt || 0), 0);
+    const netCash  = cashRev - cashExp;
+    sumEl.innerHTML = `<div class="flex flex-wrap gap-4 text-xs mt-1">
+        <span>Total Expenses: <strong class="text-rose-700">${money(totalExp)}</strong></span>
+        <span>Cash Expenses: <strong class="text-rose-700">${money(cashExp)}</strong></span>
+        <span>Cash Revenue: <strong class="text-emerald-700">${money(cashRev)}</strong></span>
+        <span class="font-bold">Net Cash in Hand: <strong class="${netCash >= 0 ? 'text-emerald-700' : 'text-rose-700'}">${money(netCash)}</strong></span>
+        </div>`;
+}
+
+async function expSave(btn) {
+    const branchId = document.getElementById('dvBranch').value;
+    const date     = document.getElementById('dvDate').value || ymdLocal(new Date());
+    const desc     = document.getElementById('expDesc').value.trim();
+    const amt      = Math.round(Number(document.getElementById('expAmt').value) || 0);
+    const mode     = document.getElementById('expMode').value;
+    if (branchId === 'all') { alert('Select a specific branch before logging an expense.'); return; }
+    if (!desc)             { alert('Enter a description.'); return; }
+    if (desc.length > 160) { alert('Description must be 160 characters or less.'); return; }
+    if (amt < 1)           { alert('Enter a valid amount (' + CFG.locale.currencySymbol + '1 or more).'); return; }
+    btn.disabled = true; btn.innerText = 'Saving…';
+    const { error } = await sb.from('expenses').insert({ branch_id: branchId, expense_date: date, description: desc, amount: amt, payment_mode: mode });
+    btn.disabled = false; btn.innerText = 'Save Expense';
+    if (error) { alert('Could not save: ' + error.message); return; }
+    document.getElementById('expDesc').value = '';
+    document.getElementById('expAmt').value  = '';
+    document.getElementById('expAddForm').classList.add('hidden');
+    expLoad();
+}
+
+async function expEdit(id) {
+    if (!EXP.canEdit) return;
+    const e = EXP.rows.find(r => r.id === id); if (!e) return;
+    const desc = prompt('Edit description:', e.description);
+    if (desc === null) return;
+    if (!desc.trim() || desc.trim().length > 160) { alert('Description must be 1–160 characters.'); return; }
+    const amtStr = prompt('Edit amount (' + CFG.locale.currencySymbol + '):', String(e.amount));
+    if (amtStr === null) return;
+    const amt = Math.round(Number(amtStr));
+    if (isNaN(amt) || amt < 1) { alert('Enter a valid amount.'); return; }
+    const { error } = await sb.from('expenses').update({ description: desc.trim(), amount: amt }).eq('id', id);
+    if (error) { alert('Could not update: ' + error.message); return; }
+    expLoad();
+}
+
+async function expDelete(id) {
+    if (!EXP.canEdit) return;
+    const e = EXP.rows.find(r => r.id === id); if (!e) return;
+    if (!confirm('Delete expense: ' + e.description + '?')) return;
+    const { error } = await sb.from('expenses').delete().eq('id', id);
+    if (error) { alert('Could not delete: ' + error.message); return; }
+    expLoad();
+}
+
+
 
