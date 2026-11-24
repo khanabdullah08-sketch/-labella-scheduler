@@ -1,0 +1,148 @@
+function_name,definition
+adjust_session,"CREATE OR REPLACE FUNCTION public.adjust_session(p_booking_id uuid, p_duration integer, p_price integer)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare b record; new_end int; n int;
+begin
+    if p_duration is null or p_duration < 15 or p_duration > 240
+       or p_price is null or p_price < 0 or p_price > 100000 then return 'bad_input'; end if;
+
+    select * into b from bookings where id = p_booking_id and kind = 'booking' for update;
+    if not found then return 'no_booking'; end if;
+    if b.status <> 'confirmed' then return 'not_confirmed'; end if;
+    if p_duration = b.duration and p_price = b.price then return 'no_change'; end if;
+
+    new_end := b.start_min + p_duration;
+    if new_end > 23 * 60 then return 'past_close'; end if;
+
+    /* therapist already booked in the new window? */
+    if b.therapist_id is not null and exists (
+        select 1 from bookings x
+         where x.id <> b.id and x.therapist_id = b.therapist_id and x.date = b.date
+           and x.kind = 'booking' and x.status = 'confirmed'
+           and x.start_min < new_end and x.end_min > b.start_min) then
+        return 'therapist_busy';
+    end if;
+
+    /* room already booked in the new window? */
+    if b.room_no is not null and exists (
+        select 1 from bookings x
+         where x.id <> b.id and x.loc_id = b.loc_id and x.date = b.date and x.room_no = b.room_no
+           and x.kind = 'booking' and x.status = 'confirmed'
+           and x.start_min < new_end and x.end_min > b.start_min) then
+        return 'room_busy';
+    end if;
+
+    /* centre capacity, only matters when extending */
+    if new_end > b.end_min then
+        perform pg_advisory_xact_lock(hashtext(b.loc_id || b.date::text));
+        select count(*) into n from bookings x
+         where x.id <> b.id and x.loc_id = b.loc_id and x.date = b.date
+           and x.start_min < new_end and x.end_min > b.start_min
+           and ((x.kind = 'booking' and x.status = 'confirmed')
+             or (x.kind = 'hold' and x.expires_at > now()));
+        if n >= room_cap(b.loc_id) then return 'centre_full'; end if;
+    end if;
+
+    update bookings set
+        orig_duration = coalesce(orig_duration, duration),
+        orig_price    = coalesce(orig_price, price),
+        duration      = p_duration,
+        price         = p_price,
+        end_min       = new_end,
+        service_name  = regexp_replace(service_name, '\(\d+ Mins\)\s*$', '(' || p_duration || ' Mins)'),
+        adjusted_at   = now(),
+        adjusted_by   = coalesce(auth.jwt() ->> 'email', 'staff')
+     where id = p_booking_id;
+    return 'ok';
+exception when exclusion_violation then
+    return 'busy';
+end $function$
+"
+assign_room,"CREATE OR REPLACE FUNCTION public.assign_room(p_booking_id uuid, p_room integer)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare b record;
+begin
+    select * into b from bookings where id = p_booking_id and kind = 'booking';
+    if not found then return 'no_booking'; end if;
+    if p_room is null then
+        update bookings set room_no = null where id = p_booking_id;
+        return 'ok';
+    end if;
+    if b.status <> 'confirmed' then return 'not_confirmed'; end if;
+    if p_room < 1 or p_room > room_cap(b.loc_id) then return 'no_such_room'; end if;
+    update bookings set room_no = p_room where id = p_booking_id;
+    return 'ok';
+exception when exclusion_violation then
+    return 'busy';
+end $function$
+"
+confirm_booking,"CREATE OR REPLACE FUNCTION public.confirm_booking(p_token text, p_ref text, p_loc_name text, p_service_id text, p_service_name text, p_price integer, p_name text, p_phone text, p_notes text, p_source text DEFAULT 'online'::text, p_created_by text DEFAULT NULL::text)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare hit int;
+begin
+  if p_name is null or length(trim(p_name)) < 2 then return 'badname'; end if;
+  if p_phone !~ '^[6-9][0-9]{9}$'                then return 'badphone'; end if;
+  if p_price < 0 or p_price > 50000              then return 'badprice'; end if;
+
+  update bookings set
+    kind         = 'booking',
+    ref          = left(p_ref, 20),
+    loc_name     = left(coalesce(p_loc_name, ''), 80),
+    service_id   = left(coalesce(p_service_id, ''), 20),
+    service_name = left(coalesce(p_service_name, ''), 120),
+    price        = p_price,
+    name         = left(trim(p_name), 80),
+    phone        = p_phone,
+    notes        = left(coalesce(nullif(trim(p_notes), ''), 'None'), 500),
+    source       = case when p_source in ('online','phone','walkin')
+                        then p_source else 'online' end,
+    created_by   = left(coalesce(p_created_by, ''), 80),
+    token        = null,
+    expires_at   = null
+  where token = p_token and kind = 'hold' and expires_at > now();
+
+  get diagnostics hit = row_count;
+  return case when hit = 1 then 'ok' else 'expired' end;
+end $function$
+"
+create_hold,"CREATE OR REPLACE FUNCTION public.create_hold(p_loc text, p_date date, p_start integer, p_duration integer, p_rooms integer, p_token text)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare n int;
+begin
+  if p_duration not in (50, 60, 80, 90) then return 'invalid'; end if;
+  if p_start < 690 or (p_start + p_duration) > 1380 then return 'closed'; end if;
+  if p_date < current_date or p_date > current_date + 30 then return 'baddate'; end if;
+  if p_rooms < 1 or p_rooms > 30 then return 'invalid'; end if;
+
+  delete from bookings where kind = 'hold' and expires_at < now();
+
+  for n in 1..p_rooms loop
+    begin
+      insert into bookings(kind, loc_id, date, start_min, end_min,
+                           duration, room_no, token, expires_at)
+      values('hold', p_loc, p_date, p_start, p_start + p_duration,
+             p_duration, n, p_token, now() + interval '7 minutes');
+      return 'ok';
+    exception when exclusion_violation then
+      continue;   -- that room is busy, try the next one
+    end;
+  end loop;
+  return 'full';
+end $function$
+"

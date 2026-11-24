@@ -1,0 +1,6 @@
+kind,tablename,name,detail,expr
+policy,bookings,anon can insert bookings,INSERT,null
+policy,bookings,staff full access,ALL,true
+trigger,bookings,centre_capacity,INSERT,EXECUTE FUNCTION trg_centre_capacity()
+trigger,bookings,no_auto_room,INSERT,EXECUTE FUNCTION trg_no_auto_room()
+trigger,bookings,no_auto_room,UPDATE,EXECUTE FUNCTION trg_no_auto_room()

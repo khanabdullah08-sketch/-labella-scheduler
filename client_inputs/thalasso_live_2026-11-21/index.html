@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book an Appointment | Thalasso Luxe Wellness &amp; Spa, South Delhi</title>
+    <meta name="description" content="Book your massage or spa therapy at Thalasso Luxe — Vasant Vihar, Defence Colony, Greater Kailash and MG Road Sultanpur. Open 11:30 AM to 11:00 PM daily.">
+    <meta name="theme-color" content="#2c3e2c">
+    <meta property="og:title" content="Thalasso Luxe Wellness &amp; Spa — Book Online">
+    <meta property="og:description" content="Four sanctuaries across South Delhi. Signature, therapeutic, Ayurvedic and couples therapies.">
+    <meta property="og:type" content="website">
+    <link rel="icon" href="favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 50:'#f6f8f6',100:'#e3ebe3',200:'#c7d7c7',500:'#587b58',600:'#436143',800:'#2c3e2c',900:'#1a261a' },
+                        sand:  { 50:'#faf8f5',100:'#f3eee6',200:'#e5dacf',800:'#5a4e42' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        @media print { #holdBar, .no-print { display: none !important; } }
+    </style>
+</head>
+<body class="bg-sand-50 text-brand-900 font-sans min-h-screen antialiased selection:bg-brand-100 pb-12">
+
+    <!-- Top Navigation Header -->
+    <header class="sticky top-0 z-40 bg-sand-50/90 backdrop-blur-md border-b border-sand-200">
+        <div class="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <button id="backBtn" onclick="handleBackNav()" class="hidden p-2 -ml-2 rounded-full hover:bg-sand-200 text-brand-800 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                </button>
+                <div>
+                    <h1 class="font-bold text-lg tracking-wide uppercase text-brand-800">Thalasso Luxe</h1>
+                    <p class="text-xs text-brand-600 font-medium">Wellness &amp; Spa Sanctuaries</p>
+                </div>
+            </div>
+            <div class="text-xs font-semibold px-2.5 py-1 rounded-full bg-brand-100 text-brand-800">4 Sanctuaries</div>
+        </div>
+    </header>
+
+    <main class="max-w-2xl mx-auto px-4 pt-6">
+
+        <!-- Progress Steps -->
+        <div class="mb-6 flex justify-between items-center text-xs font-medium text-brand-600 border-b border-sand-200 pb-3">
+            <span id="stepLabel1" class="text-brand-800 font-bold">1. Location</span>
+            <span>&rarr;</span>
+            <span id="stepLabel2">2. Service</span>
+            <span>&rarr;</span>
+            <span id="stepLabel3">3. Time</span>
+            <span>&rarr;</span>
+            <span id="stepLabel4">4. Confirm</span>
+        </div>
+
+        <!-- STEP 1 -->
+        <section id="stepLocation" class="space-y-4">
+            <div class="mb-4">
+                <h2 class="text-xl font-bold text-brand-900">Select Your Sanctuary</h2>
+                <p class="text-sm text-sand-800">Choose a location nearest to you for your wellness experience.</p>
+            </div>
+            <div id="locationsGrid" class="grid gap-3"></div>
+        </section>
+
+        <!-- STEP 2 -->
+        <section id="stepService" class="hidden space-y-4">
+            <div>
+                <h2 class="text-xl font-bold text-brand-900">Choose Therapy</h2>
+                <p class="text-sm text-sand-800">Select a signature treatment from our menu.</p>
+            </div>
+            <div id="categoryTabs" class="flex space-x-2 overflow-x-auto no-scrollbar py-1"></div>
+            <div id="servicesList" class="space-y-3 pt-2"></div>
+        </section>
+
+        <!-- STEP 3 -->
+        <section id="stepTime" class="hidden space-y-6">
+            <div>
+                <h2 class="text-xl font-bold text-brand-900">Select Date &amp; Time</h2>
+                <p class="text-sm text-sand-800">Operating Hours: 11:30 AM – 11:00 PM daily.</p>
+            </div>
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-brand-800 mb-2">Appointment Date</label>
+                <div id="dateChips" class="flex space-x-2 overflow-x-auto no-scrollbar py-1"></div>
+            </div>
+            <div id="durationNotice" class="p-3 bg-brand-50 border border-brand-200 rounded-lg text-xs text-brand-800 flex items-center justify-between">
+                <span>Selected: <strong id="selectedServiceDurationText">60 mins</strong> service</span>
+                <span class="text-brand-600 font-semibold">Capped at 11:00 PM</span>
+            </div>
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-brand-800 mb-2">Available Start Slots</label>
+                <div id="timeSlotsGrid" class="grid grid-cols-3 sm:grid-cols-4 gap-2"></div>
+                <p class="text-[11px] text-sand-800 mt-2">Crossed-out times are already reserved or too close to closing.</p>
+            </div>
+            <button id="timeNextBtn" disabled onclick="goToStep(4)" class="w-full py-3.5 bg-brand-800 text-white font-semibold rounded-xl disabled:opacity-40 disabled:cursor-not-allowed hover:bg-brand-900 transition shadow-sm">
+                Continue to Guest Details
+            </button>
+        </section>
+
+        <!-- STEP 4 -->
+        <section id="stepConfirm" class="hidden space-y-5">
+            <div>
+                <h2 class="text-xl font-bold text-brand-900">Guest Information</h2>
+                <p class="text-sm text-sand-800">Please provide contact details for booking confirmation.</p>
+            </div>
+            <div class="bg-sand-100 p-4 rounded-xl border border-sand-200 space-y-2 text-sm">
+                <div class="flex justify-between border-b border-sand-200 pb-2"><span class="text-sand-800">Location:</span><span id="summaryLocation" class="font-bold text-brand-900">--</span></div>
+                <div class="flex justify-between border-b border-sand-200 pb-2"><span class="text-sand-800">Therapy:</span><span id="summaryService" class="font-bold text-brand-900">--</span></div>
+                <div class="flex justify-between border-b border-sand-200 pb-2"><span class="text-sand-800">Date &amp; Time:</span><span id="summaryDateTime" class="font-bold text-brand-900">--</span></div>
+                <div class="flex justify-between pt-1"><span class="text-sand-800">Total Payable:</span><span id="summaryPrice" class="font-extrabold text-brand-800 text-base">--</span></div>
+            </div>
+            <form id="bookingForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-brand-800 uppercase mb-1">Full Name *</label>
+                    <input type="text" id="custName" required placeholder="e.g. Rahul Sharma" class="w-full p-3 bg-white border border-sand-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-brand-800 uppercase mb-1">WhatsApp Phone Number *</label>
+                    <input type="tel" id="custPhone" required inputmode="numeric" placeholder="e.g. 9876543210" class="w-full p-3 bg-white border border-sand-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-brand-800 uppercase mb-1">Special Notes / Preferences</label>
+                    <textarea id="custNotes" rows="2" placeholder="e.g. Deep pressure focus on lower back" class="w-full p-3 bg-white border border-sand-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none text-sm"></textarea>
+                </div>
+                <button type="submit" class="w-full py-4 bg-emerald-700 text-white font-bold rounded-xl hover:bg-emerald-800 transition flex items-center justify-center space-x-2 shadow-md">
+                    <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.705 1.754zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
+                    <span>Confirm Booking via WhatsApp</span>
+                </button>
+            </form>
+        </section>
+
+        <!-- STEP 5 -->
+        <section id="stepSuccess" class="hidden space-y-6 text-center py-8">
+            <div class="w-16 h-16 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            </div>
+            <div>
+                <h2 class="text-2xl font-extrabold text-brand-900">Booking Confirmed!</h2>
+                <p class="text-sm text-sand-800 mt-1">Your slot is locked in and your details have opened in WhatsApp.</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-sand-200 text-left space-y-2 text-xs">
+                <div class="flex justify-between"><span class="text-sand-800">Ref Code:</span><span id="succRef" class="font-mono font-bold">--</span></div>
+                <div class="flex justify-between"><span class="text-sand-800">Sanctuary:</span><span id="succLoc" class="font-bold">--</span></div>
+                <div class="flex justify-between"><span class="text-sand-800">Service:</span><span id="succService" class="font-bold">--</span></div>
+                <div class="flex justify-between"><span class="text-sand-800">Date &amp; Time:</span><span id="succTime" class="font-bold">--</span></div>
+            </div>
+            <div class="flex flex-col space-y-3">
+                <button onclick="downloadCalendarEvent()" class="w-full py-3 bg-brand-100 text-brand-800 font-semibold rounded-xl hover:bg-brand-200 transition text-sm flex items-center justify-center space-x-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    <span>Add to Phone Calendar (.ics)</span>
+                </button>
+                <button onclick="resetApp()" class="w-full py-3 border border-sand-200 text-brand-800 font-semibold rounded-xl hover:bg-sand-100 transition text-sm">
+                    Book Another Appointment
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- hold countdown bar -->
+    <div id="holdBar" class="hidden fixed bottom-0 left-0 right-0 z-40 bg-amber-100 border-t border-amber-300 text-amber-900 text-xs font-bold text-center py-2.5"></div>
+
+
+    <!-- DAY VIEW CONSOLE -->
+    <div id="dvModal" class="hidden fixed inset-0 z-50 bg-sand-50 overflow-y-auto">
+        <div class="sticky top-0 bg-white border-b border-sand-200 px-4 py-3 flex flex-wrap gap-2 items-center no-print">
+            <strong class="text-brand-900 text-sm mr-1">Day View Console</strong>
+            <input id="dvDate" type="date" class="px-2 py-1.5 border border-sand-200 rounded-lg text-xs">
+            <select id="dvBranch" class="px-2 py-1.5 border border-sand-200 rounded-lg text-xs"></select>
+            <button onclick="dvLoad()" class="px-3 py-1.5 bg-brand-100 text-brand-800 rounded-lg text-xs font-semibold">Refresh</button>
+            <button onclick="dvShowAdd()" class="px-3 py-1.5 bg-emerald-100 text-emerald-800 rounded-lg text-xs font-semibold">+ Phone booking</button>
+            <button onclick="thShowAdd()" class="px-3 py-1.5 bg-indigo-100 text-indigo-800 rounded-lg text-xs font-semibold">+ Add Therapist</button>
+            <button onclick="dvCsv()" class="px-3 py-1.5 bg-brand-100 text-brand-800 rounded-lg text-xs font-semibold">Export CSV</button>
+            <button onclick="window.print()" class="px-3 py-1.5 bg-brand-100 text-brand-800 rounded-lg text-xs font-semibold">Print</button>
+            <button onclick="dvLogout()" class="px-3 py-1.5 bg-sand-100 text-sand-800 rounded-lg text-xs font-semibold">Log out</button>
+            <button onclick="dvClose()" class="ml-auto px-3 py-1.5 bg-brand-800 text-white rounded-lg text-xs font-bold">Close</button>
+        </div>
+        <div class="max-w-6xl mx-auto px-4 py-4 space-y-5">
+            <div id="dvKpi" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+            <div id="dvAdd" class="hidden bg-white border border-emerald-200 rounded-xl p-4 space-y-3">
+                <div class="flex items-center justify-between">
+                    <strong class="text-sm text-brand-900">Add a phone / walk-in booking</strong>
+                    <button onclick="document.getElementById('dvAdd').classList.add('hidden')" class="text-xs text-sand-800">Hide</button>
+                </div>
+                <div class="grid sm:grid-cols-2 gap-3 text-xs">
+                    <select id="aLoc" class="p-2.5 border border-sand-200 rounded-lg"></select>
+                    <select id="aSrv" class="p-2.5 border border-sand-200 rounded-lg"></select>
+                    <input id="aDate" type="date" class="p-2.5 border border-sand-200 rounded-lg">
+                    <div class="flex items-center gap-2">
+                        <input id="aTime" type="time" step="300" class="p-2.5 border border-sand-200 rounded-lg flex-1">
+                        <span id="aEnds" class="text-[11px] text-sand-800 whitespace-nowrap">ends --</span>
+                    </div>
+                    <input id="aName" placeholder="Guest name" class="p-2.5 border border-sand-200 rounded-lg">
+                    <input id="aPhone" placeholder="10-digit mobile" inputmode="numeric" class="p-2.5 border border-sand-200 rounded-lg">
+                    <select id="aSource" class="p-2.5 border border-sand-200 rounded-lg">
+                        <option value="phone">Phone booking</option>
+                        <option value="walkin">Walk-in</option>
+                    </select>
+                    <input id="aNotes" placeholder="Notes (optional)" class="p-2.5 border border-sand-200 rounded-lg">
+                    <div>
+                        <select id="aTher" class="w-full p-2.5 border border-sand-200 rounded-lg"></select>
+                        <div id="aTherNote" class="text-[11px] text-sand-800 mt-1">&nbsp;</div>
+                    </div>
+                    <div class="grid grid-cols-5 gap-2 self-start">
+                        <input id="aAddon" maxlength="80" placeholder="Add-on (e.g. head massage)" class="col-span-3 p-2.5 border border-sand-200 rounded-lg">
+                        <input id="aAddonAmt" type="number" min="0" max="100000" step="1" inputmode="numeric" placeholder="Amt ₹" class="col-span-2 p-2.5 border border-sand-200 rounded-lg">
+                    </div>
+                </div>
+                <button onclick="dvAddBooking(this)" class="w-full py-2.5 bg-emerald-700 text-white font-bold rounded-lg text-xs">Save booking</button>
+            </div>
+            <div class="bg-white border border-sand-200 rounded-xl p-3 overflow-x-auto">
+                <div id="dvGrid" class="min-w-max text-[11px]"></div>
+            </div>
+            <div id="thAdd" class="hidden bg-white border border-indigo-200 rounded-xl p-4 space-y-3">
+                <div class="flex items-center justify-between">
+                    <strong class="text-sm text-brand-900">Add therapist to today's roster</strong>
+                    <button onclick="document.getElementById('thAdd').classList.add('hidden')" class="text-xs text-sand-800">Hide</button>
+                </div>
+                <div class="grid sm:grid-cols-2 gap-3 text-xs">
+                    <select id="tLoc" class="p-2.5 border border-sand-200 rounded-lg"></select>
+                    <input id="tName" list="tDir" placeholder="Therapist name" class="p-2.5 border border-sand-200 rounded-lg">
+                    <datalist id="tDir"></datalist>
+                    <label class="flex items-center gap-2 sm:col-span-2">Arrival time<input id="tArr" type="time" step="300" class="flex-1 p-2.5 border border-sand-200 rounded-lg"></label>
+                </div>
+                    <p class="text-[11px] text-sand-800">Only the arrival time is needed. Shift end is logged later with the <strong>End shift</strong> button in the roster. Max 20 per centre per day — start typing to reuse a name.</p>
+                <button onclick="thSave(this)" class="w-full py-2.5 bg-indigo-700 text-white font-bold rounded-lg text-xs">Save therapist</button>
+            </div>
+            <div class="bg-white border border-sand-200 rounded-xl p-3">
+                <div class="flex items-center justify-between mb-2">
+                    <strong class="text-xs uppercase tracking-wide text-sand-800">Therapist roster</strong>
+                    <span id="thCount" class="text-[11px] text-sand-800"></span>
+                </div>
+                <div id="thGrid" class="overflow-x-auto text-[11px]"></div>
+            </div>
+            <div id="dvList" class="space-y-2"></div>
+        </div>
+    </div>
+
+<script>
+/* ============================================================
+   1. CLOUD CONFIG   —  CHANGE THE TWO LINES MARKED 👈
+   ============================================================ */
+const SUPA_URL = 'https://fkklmjntbvrvbxhhficy.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZra2xtam50YnZydmJ4aGhmaWN5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMzNTE1NTAsImV4cCI6MjEwODkyNzU1MH0.s6cCvx7mbMX0lxe7qpswRkVgTZ48uPwOlzyNnKkCay8';   // 👈 1. paste your key
+
+// Treatment rooms per branch. ASK THE CLIENT — these are guesses.
+const ROOMS = { vv: 6, def: 6, gk: 6, mg: 10 };            // 👈 2. real numbers
+
+const OPEN_MIN   = 690;    // 11:30 AM
+const CLOSE_MIN  = 1380;   // 11:00 PM
+const SLOT_STEP  = 30;
+const BUFFER_MINS = 15;    // cleaning gap between sessions
+const LEAD_MINS   = 30;    // guests must book at least 1 hour ahead
+
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+/* ============================================================
+   2. SANCTUARIES
+   ============================================================ */
+const LOCATIONS = [
+    { id: 'vv',      name: 'Vasant Vihar Sanctuary',    city: 'South Delhi', phone: '919220228407', address: 'Building 47, 3rd Floor, Priya Community Centre Market, Basant Lok, Vasant Vihar, New Delhi 110057' },
+    { id: 'def',     name: 'Defence Colony Sanctuary',  city: 'South Delhi', phone: '918287825534', address: 'D Block, above Emperos Salon, Defence Colony, New Delhi 110024' },
+    { id: 'gk',      name: 'Greater Kailash Sanctuary', city: 'South Delhi', phone: '919958706222', address: '2nd Floor, M-31, Block M, Greater Kailash II, New Delhi 110048' },
+    { id: 'mg',      name: 'MG Road Sultanpur',         city: 'South Delhi', phone: '919220228408', address: 'Metro Pillar No. 10, 2nd Floor, Moment Building 139, opp. Mehrauli-Gurgaon Road, near Sultanpur, New Delhi 110030' }
+];
+
+/* ============================================================
+   3. OFFICIAL SERVICES MENU
+   ============================================================ */
+/* ---- Menu A: Vasant Vihar, Defence Colony, Greater Kailash ---- */
+const SERVICES_STD = [
+    { id: 's1',  cat: 'Signature',   name: 'Hands of Harmony (Four Hands)',      desc: 'Two therapists in perfect synchrony for an immersive experience.',        options: [{ duration: 60, price: 6500 }, { duration: 90, price: 9999 }] },
+    { id: 's2',  cat: 'Signature',   name: 'Aqua Indulgence',                    desc: 'Customised massage, sea salt scrub, private steam & jacuzzi.',            options: [{ duration: 90, price: 7000 }] },
+    { id: 's3',  cat: 'Therapeutic', name: 'Hot Stone Realm',                    desc: 'Warm basalt stones massaged into key body points easing stiffness.',      options: [{ duration: 60, price: 3799 }, { duration: 90, price: 5499 }] },
+    { id: 's4',  cat: 'Therapeutic', name: 'Intense Affair (Deep Tissue)',       desc: 'Targets deep muscle layers for athletic recovery and tension relief.',    options: [{ duration: 60, price: 3500 }, { duration: 90, price: 5000 }] },
+    { id: 's5',  cat: 'Therapeutic', name: 'Thai Balm Massage',                  desc: 'Thai stretching with a specialised herbal balm for muscle tension.',      options: [{ duration: 60, price: 3699 }] },
+    { id: 's6',  cat: 'Therapeutic', name: 'Cocktail Bliss (Balinese)',          desc: 'Rhythmic Balinese massage using acupressure and kneading.',               options: [{ duration: 60, price: 3500 }, { duration: 90, price: 4800 }] },
+    { id: 's17', cat: 'Therapeutic', name: 'Thai Traditional Stretch',           desc: 'Rhythmic pressure, muscle compression and deep stretching.',              options: [{ duration: 60, price: 3500 }, { duration: 90, price: 5000 }] },
+    { id: 's7',  cat: 'Relaxation',  name: 'Essence of Thalasso (Aromatherapy)', desc: 'Essential oils restore emotional balance and calm the mind.',             options: [{ duration: 60, price: 3200 }, { duration: 90, price: 4800 }] },
+    { id: 's8',  cat: 'Relaxation',  name: 'A Balanced Affair (Swedish)',        desc: 'Soothing light-pressure massage promoting restful sleep.',                options: [{ duration: 60, price: 3000 }, { duration: 90, price: 4600 }] },
+    { id: 's9',  cat: 'Ayurvedic',   name: 'Abhyanga Ritual',                    desc: 'Flowing strokes with traditional herbal oils to release fatigue.',        options: [{ duration: 60, price: 3500 }, { duration: 90, price: 5000 }] },
+    { id: 's10', cat: 'Ayurvedic',   name: 'Potli Ritual',                       desc: 'Warm therapy using pouches filled with Ayurvedic herbs.',                 options: [{ duration: 60, price: 3799 }, { duration: 90, price: 5499 }] },
+    { id: 's11', cat: 'Targeted',    name: 'Tranquil Toes (Reflexology)',        desc: 'Reflex zones in the feet targeted for full-body healing.',                options: [{ duration: 60, price: 3000 }] },
+    { id: 's12', cat: 'Targeted',    name: 'Targeted Indulgence (2 Areas)',      desc: 'Focused attention on two zones (head, foot, back, etc.).',                options: [{ duration: 50, price: 4000 }] },
+    { id: 's13', cat: 'Targeted',    name: 'Targeted Indulgence (4 Areas)',      desc: 'Deep relief for four zones: head, foot, shoulder, neck or back.',         options: [{ duration: 80, price: 6500 }] },
+    { id: 's14', cat: 'Couples',     name: 'Perfectly Paired (Hot Stone Couple)',desc: 'Relaxing hot stone experience designed for couples.',                     options: [{ duration: 60, price: 8000 }, { duration: 90, price: 10000 }] },
+    { id: 's15', cat: 'Couples',     name: 'Signature Jacuzzi Ritual for Two',   desc: 'Massage, private steam bath and rejuvenating jacuzzi.',                   options: [{ duration: 90, price: 14000 }] },
+    { id: 's16', cat: 'Couples',     name: 'Twin Flame (Couple Massage)',        desc: 'Synchronised massage in a private setting with scrub / foot therapy.',    options: [{ duration: 60, price: 8500 }, { duration: 90, price: 12000 }] }
+];
+
+/* ---- Menu B: MG Road Sultanpur (Wellness Realm) ---- */
+const SERVICES_MG = [
+    { id: 'm1',  cat: 'Signature',   name: 'Hands of Harmony (Four Hands)',      desc: 'Two therapists in perfect synchrony for an immersive, luxurious experience.',        options: [{ duration: 60, price: 8000 }, { duration: 90, price: 12000 }] },
+    { id: 'm2',  cat: 'Signature',   name: 'Turkish Hammam',                     desc: 'Steam, exfoliation and olive oil foam massage for purification and rejuvenation.',   options: [{ duration: 60, price: 5000 }, { duration: 90, price: 7000 }] },
+    { id: 'm3',  cat: 'Signature',   name: 'Aqua Indulgence',                    desc: 'Hydro-massage, water therapy and marine rituals for a deep detox.',                 options: [{ duration: 90, price: 9000 }] },
+    { id: 'm4',  cat: 'Therapeutic', name: 'Hot Stone Realm',                    desc: 'Warm basalt stones massaged into key body points, easing stiffness and enhancing circulation.', options: [{ duration: 60, price: 3800 }, { duration: 90, price: 5200 }] },
+    { id: 'm5',  cat: 'Therapeutic', name: 'Intense Affair (Deep Tissue)',       desc: 'Targets deep muscle layers for athletic recovery and tension relief.',              options: [{ duration: 60, price: 4000 }, { duration: 90, price: 5500 }] },
+    { id: 'm6',  cat: 'Therapeutic', name: 'Zen Journey (CBD)',                  desc: 'CBD-infused oils reduce inflammation and muscular discomfort, inducing blissful zen.', options: [{ duration: 60, price: 4000 }, { duration: 90, price: 5500 }] },
+    { id: 'm7',  cat: 'Therapeutic', name: 'Athletic Indulgences',               desc: 'Assisted stretching, massage gun therapy and deep tissue for active body recovery.', options: [{ duration: 60, price: 4500 }, { duration: 90, price: 6000 }] },
+    { id: 'm8',  cat: 'Therapeutic', name: 'Cocktail Bliss (Balinese)',          desc: 'Rhythmic Balinese massage using acupressure, kneading and aromatherapy.',           options: [{ duration: 60, price: 3800 }, { duration: 90, price: 5200 }] },
+    { id: 'm9',  cat: 'Relaxation',  name: 'A Balanced Affair (Swedish)',        desc: 'A soothing light-pressure massage that calms the nervous system and promotes restful sleep.', options: [{ duration: 60, price: 3800 }, { duration: 90, price: 5200 }] },
+    { id: 'm10', cat: 'Relaxation',  name: 'Essence of Thalasso (Aromatherapy)', desc: 'Essential oils restore emotional balance and calm the mind.',                       options: [{ duration: 60, price: 3800 }, { duration: 90, price: 5200 }] },
+    { id: 'm11', cat: 'Targeted',    name: 'Tranquil Toes (Reflexology)',        desc: 'Reflex zones in the feet are targeted to stimulate full-body healing.',             options: [{ duration: 30, price: 2000 }, { duration: 45, price: 3000 }, { duration: 60, price: 3500 }] },
+    { id: 'm12', cat: 'Targeted',    name: 'Targeted Indulgence (2 Areas)',      desc: 'Choose any two zones for focused attention to melt away fatigue and tension.',      options: [{ duration: 50, price: 4000 }] },
+    { id: 'm13', cat: 'Targeted',    name: 'Targeted Indulgence (4 Areas)',      desc: 'Four focus areas — head, foot, shoulder, neck, back or calves — for deep, localised relief.', options: [{ duration: 80, price: 6500 }] },
+    { id: 'm14', cat: 'Escapes',     name: 'Meet Me At The Spa',                 desc: 'A mini-retreat: soothing head massage, revitalising foot massage and a nourishing face pack.', options: [{ duration: 60, price: 4500 }] },
+    { id: 'm15', cat: 'Escapes',     name: 'Total Trance (Massage + Face Pack)', desc: 'A massage of your choice followed by a soothing face pack — a head-to-toe refresh.', options: [{ duration: 50, price: 4000 }, { duration: 80, price: 5500 }] },
+    { id: 'm16', cat: 'Couples',     name: 'Meet Me At The Spa (For Two)',       desc: 'The mini-retreat ritual enjoyed together — head massage, foot massage and face pack.', options: [{ duration: 60, price: 8000 }] },
+    { id: 'm17', cat: 'Couples',     name: 'Perfectly Paired (Hot Stone For Two)', desc: 'A deeply relaxing hot stone experience for couples, friends or BFFs.',             options: [{ duration: 60, price: 9000 }, { duration: 75, price: 11000 }, { duration: 90, price: 13000 }] },
+    { id: 'm18', cat: 'Couples',     name: 'Perfectly Paired Hydrotherapy Ritual For Two', desc: 'A two-hour escape: full-body exfoliation, private sauna and rejuvenating hydrotherapy.', options: [{ duration: 120, price: 18000 }] },
+    { id: 'm19', cat: 'Couples',     name: 'Twin Flame (Couple Massage)',        desc: 'A synchronised basic massage in a serene, private setting.',                        options: [{ duration: 60, price: 10000 }, { duration: 90, price: 12000 }] }
+];
+
+/* ---- Which branch gets which menu ---- */
+const MENUS = { vv: SERVICES_STD, def: SERVICES_STD, gk: SERVICES_STD, mg: SERVICES_MG };
+const menuFor = id => MENUS[id] || SERVICES_STD;
+
+/* Active menu — swapped when the guest picks a branch. Must be `let`, not `const`. */
+let SERVICES = SERVICES_STD;
+
+
+/* ============================================================
+   4. STATE + HELPERS
+   ============================================================ */
+let bookingState = { step: 1, location: null, service: null, selectedOption: null,
+                     date: null, timeSlot: null, startMinutes: null, customer: {} };
+
+let holdToken = null, holdDeadline = null, holdTicker = null;
+
+const pad2 = n => String(n).padStart(2, '0');
+const ymdLocal = d => d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+function minsToText(m) {
+    const h = Math.floor(m / 60), mm = m % 60;
+    return (h % 12 || 12) + ':' + pad2(mm) + ' ' + (h >= 12 ? 'PM' : 'AM');
+}
+const money = n => '₹' + (Number(n) || 0).toLocaleString('en-IN');
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const capOf = id => ROOMS[id] || 4;
+const nowMins = () => { const d = new Date(); return d.getHours() * 60 + d.getMinutes(); };
+const cleanPhone = v => String(v || '').replace(/\D/g, '').replace(/^(0091|91|0)(?=[6-9]\d{9}$)/, '');
+
+/* ---- 7-minute hold countdown ---- */
+function startHoldCountdown() {
+    holdDeadline = Date.now() + 7 * 60 * 1000;
+    clearInterval(holdTicker);
+    const bar = document.getElementById('holdBar');
+    bar.classList.remove('hidden');
+    const tick = () => {
+        const left = Math.max(0, Math.round((holdDeadline - Date.now()) / 1000));
+        bar.innerText = 'Slot held for you — ' + Math.floor(left / 60) + ':' + pad2(left % 60) + ' remaining';
+        if (left <= 0) {
+            clearInterval(holdTicker);
+            bar.classList.add('hidden');
+            holdToken = null;
+            alert('Your 7-minute hold has expired. Please choose a time again.');
+            goToStep(3); renderTimeSlots();
+        }
+    };
+    tick();
+    holdTicker = setInterval(tick, 1000);
+}
+function stopHoldCountdown() {
+    clearInterval(holdTicker);
+    document.getElementById('holdBar').classList.add('hidden');
+}
+async function releaseHold() {
+    if (!holdToken) return;
+    const t = holdToken; holdToken = null; stopHoldCountdown();
+    try { await sb.rpc('release_hold', { p_token: t }); } catch (e) {}
+}
+window.addEventListener('beforeunload', () => {
+    if (holdToken) sb.rpc('release_hold', { p_token: holdToken });
+});
+
+/* ============================================================
+   5. INITIALISATION
+   ============================================================ */
+document.addEventListener('DOMContentLoaded', () => {
+    renderLocations();
+    renderCategories();
+    renderServices('All');
+    generateDates();
+    dvInitPickers();
+});
+
+/* ============================================================
+   6. STEP 1 — LOCATIONS
+   ============================================================ */
+function renderLocations() {
+    document.getElementById('locationsGrid').innerHTML = LOCATIONS.map(loc => `
+        <div onclick="selectLocation('${loc.id}')" class="p-4 bg-white border border-sand-200 rounded-xl hover:border-brand-500 hover:shadow-sm cursor-pointer transition flex justify-between items-center gap-3">
+            <div>
+                <h3 class="font-bold text-brand-900">${esc(loc.name)}</h3>
+                <p class="text-xs text-sand-800">${esc(loc.address)}</p>
+            </div>
+            <span class="text-xs font-semibold text-brand-600 bg-brand-50 px-2.5 py-1 rounded-full whitespace-nowrap">${esc(loc.city)}</span>
+        </div>`).join('');
+}
+async function selectLocation(id) {
+    await releaseHold();
+    bookingState.location = LOCATIONS.find(l => l.id === id);
+    SERVICES = menuFor(id);
+    bookingState.service = null;
+    bookingState.selectedOption = null;
+    bookingState.startMinutes = null;
+    bookingState.timeSlot = null;
+    renderCategories();
+    renderServices('All');
+    goToStep(2);
+}
+
+/* ============================================================
+   7. STEP 2 — SERVICES
+   ============================================================ */
+function renderCategories() {
+    const categories = ['All', ...new Set(SERVICES.map(s => s.cat))];
+    document.getElementById('categoryTabs').innerHTML = categories.map((cat, idx) => `
+        <button onclick="filterCategory('${cat}', this)" class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition ${idx === 0 ? 'bg-brand-800 text-white' : 'bg-sand-100 text-brand-800 hover:bg-sand-200'}">${cat}</button>`).join('');
+}
+function filterCategory(cat, btnEl) {
+    document.querySelectorAll('#categoryTabs button').forEach(b => {
+        b.className = 'px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition bg-sand-100 text-brand-800 hover:bg-sand-200';
+    });
+    btnEl.className = 'px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition bg-brand-800 text-white';
+    renderServices(cat);
+}
+function renderServices(cat) {
+    const filtered = cat === 'All' ? SERVICES : SERVICES.filter(s => s.cat === cat);
+    document.getElementById('servicesList').innerHTML = filtered.map(s => `
+        <div class="p-4 bg-white border border-sand-200 rounded-xl space-y-3">
+            <div>
+                <div class="flex justify-between items-start gap-2">
+                    <h3 class="font-bold text-brand-900 text-sm">${esc(s.name)}</h3>
+                    <span class="text-[10px] uppercase font-bold text-brand-600 bg-brand-50 px-2 py-0.5 rounded whitespace-nowrap">${esc(s.cat)}</span>
+                </div>
+                <p class="text-xs text-sand-800 mt-1">${esc(s.desc)}</p>
+            </div>
+            <div class="flex flex-wrap gap-2 pt-1 border-t border-sand-100">
+                ${s.options.map(opt => `
+                    <button onclick="selectServiceOption('${s.id}', ${opt.duration}, ${opt.price})" class="flex-1 py-2 px-3 bg-sand-50 border border-sand-200 rounded-lg hover:border-brand-500 hover:bg-brand-50 transition text-left flex justify-between items-center gap-2">
+                        <span class="text-xs font-medium text-brand-800">${opt.duration} Mins</span>
+                        <span class="text-xs font-bold text-brand-900">${money(opt.price)}</span>
+                    </button>`).join('')}
+            </div>
+        </div>`).join('');
+}
+async function selectServiceOption(serviceId, duration, price) {
+    await releaseHold();
+    bookingState.service = SERVICES.find(s => s.id === serviceId);
+    bookingState.selectedOption = { duration, price };
+    bookingState.startMinutes = null;
+    bookingState.timeSlot = null;
+    document.getElementById('selectedServiceDurationText').innerText = duration + ' mins';
+    document.getElementById('timeNextBtn').disabled = true;
+    goToStep(3);
+    renderTimeSlots();
+}
+
+/* ============================================================
+   8. STEP 3 — DATES & LIVE SLOTS
+   ============================================================ */
+function generateDates() {
+    const container = document.getElementById('dateChips');
+    const dates = [], today = new Date();
+    for (let i = 0; i < 7; i++) { const d = new Date(today); d.setDate(today.getDate() + i); dates.push(d); }
+
+    container.innerHTML = dates.map((d, idx) => `
+        <button onclick="selectDate('${ymdLocal(d)}', this)" class="flex-shrink-0 px-4 py-2 rounded-xl border text-center transition ${idx === 0 ? 'bg-brand-800 text-white border-brand-800' : 'bg-white border-sand-200 text-brand-800 hover:border-brand-500'}">
+            <div class="text-[10px] uppercase font-semibold opacity-80">${d.toLocaleDateString('en-IN', { weekday: 'short' })}</div>
+            <div class="text-base font-extrabold">${d.getDate()} ${d.toLocaleDateString('en-IN', { month: 'short' })}</div>
+        </button>`).join('');
+
+    bookingState.date = ymdLocal(dates[0]);
+}
+
+async function selectDate(dateStr, btnEl) {
+    await releaseHold();
+    bookingState.date = dateStr;
+    bookingState.timeSlot = null;
+    bookingState.startMinutes = null;
+    document.getElementById('timeNextBtn').disabled = true;
+    if (btnEl) {
+        document.querySelectorAll('#dateChips button').forEach(b => {
+            b.className = 'flex-shrink-0 px-4 py-2 rounded-xl border text-center transition bg-white border-sand-200 text-brand-800 hover:border-brand-500';
+        });
+        btnEl.className = 'flex-shrink-0 px-4 py-2 rounded-xl border text-center transition bg-brand-800 text-white border-brand-800';
+    }
+    renderTimeSlots();
+}
+
+async function renderTimeSlots() {
+    const container = document.getElementById('timeSlotsGrid');
+    if (!bookingState.location || !bookingState.date) return;
+
+    const duration = bookingState.selectedOption ? bookingState.selectedOption.duration : 60;
+    const capacity = capOf(bookingState.location.id);
+
+    container.innerHTML = '<div class="col-span-full text-xs text-sand-800 py-4 text-center">Checking live availability…</div>';
+
+    const { data, error } = await sb.rpc('get_busy', {
+        p_loc: bookingState.location.id,
+        p_date: bookingState.date,
+        p_token: holdToken
+    });
+
+    if (error) {
+        container.innerHTML = '<div class="col-span-full text-xs text-red-700 py-4 text-center">Could not load availability. Check your internet, then tap the date again.</div>';
+        return;
+    }
+
+    const busy = (data || []).filter(b => !b.mine);
+    const isToday = bookingState.date === ymdLocal(new Date());
+    const n = nowMins();
+    const slots = [];
+
+    for (let current = OPEN_MIN; current <= CLOSE_MIN - SLOT_STEP; current += SLOT_STEP) {
+        const end = current + duration;
+        let disabled = false;
+        if (end > CLOSE_MIN) disabled = true;
+        else if (isToday && current < n + LEAD_MINS) disabled = true;
+        else {
+            const clashes = busy.filter(b => (current - BUFFER_MINS) < b.e_min && (end + BUFFER_MINS) > b.s_min).length;
+            if (clashes >= capacity) disabled = true;
+        }
+        slots.push({ text: minsToText(current), start: current, disabled });
+    }
+
+    container.innerHTML = slots.map(s => `
+        <button ${s.disabled ? 'disabled' : ''} data-start="${s.start}" onclick="selectTimeSlot(${s.start}, this)"
+            class="py-2.5 px-2 rounded-xl border text-center transition text-xs font-bold ${s.disabled
+                ? 'bg-sand-100 border-sand-200 text-sand-800 opacity-40 cursor-not-allowed line-through'
+                : 'bg-white border-sand-200 text-brand-900 hover:border-brand-500 hover:bg-brand-50'}">${s.text}</button>`).join('');
+
+    if (bookingState.startMinutes) highlightSlot(bookingState.startMinutes);
+}
+
+function highlightSlot(start) {
+    const btn = document.querySelector('#timeSlotsGrid button[data-start="' + start + '"]');
+    if (!btn) return;
+    btn.disabled = false;
+    btn.className = 'py-2.5 px-2 rounded-xl border text-center transition text-xs font-bold bg-brand-800 text-white border-brand-800 shadow-sm';
+}
+
+async function selectTimeSlot(startMinutes, btnEl) {
+    document.getElementById('timeNextBtn').disabled = true;
+    const original = btnEl.innerText;
+    btnEl.innerText = '…';
+    await releaseHold();
+
+    const token = 'h-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
+    const { data, error } = await sb.rpc('create_hold', {
+        p_loc: bookingState.location.id,
+        p_date: bookingState.date,
+        p_start: startMinutes,
+        p_duration: bookingState.selectedOption.duration,
+        p_rooms: capOf(bookingState.location.id),
+        p_token: token
+    });
+
+    if (error || data !== 'ok') {
+        btnEl.innerText = original;
+        alert(data === 'full'
+            ? 'Sorry — that slot was just taken by someone else. Please pick another time.'
+            : 'Could not hold that slot. Please check your internet and try again.');
+        renderTimeSlots();
+        return;
+    }
+
+    holdToken = token;
+    bookingState.startMinutes = startMinutes;
+    bookingState.timeSlot = minsToText(startMinutes);
+    startHoldCountdown();
+    await renderTimeSlots();
+    document.getElementById('timeNextBtn').disabled = false;
+}
+
+/* ============================================================
+   9. NAVIGATION
+   ============================================================ */
+function goToStep(stepNum) {
+    bookingState.step = stepNum;
+    ['stepLocation','stepService','stepTime','stepConfirm','stepSuccess'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+    });
+    const backBtn = document.getElementById('backBtn');
+    if (stepNum > 1 && stepNum < 5) backBtn.classList.remove('hidden'); else backBtn.classList.add('hidden');
+
+    for (let i = 1; i <= 4; i++) {
+        const el = document.getElementById('stepLabel' + i);
+        if (!el) continue;
+        if (i === stepNum) el.className = 'text-brand-800 font-bold';
+        else if (i < stepNum) el.className = 'text-brand-600 font-semibold';
+        else el.className = 'text-sand-800';
+    }
+
+    if (stepNum === 1) document.getElementById('stepLocation').classList.remove('hidden');
+    if (stepNum === 2) document.getElementById('stepService').classList.remove('hidden');
+    if (stepNum === 3) document.getElementById('stepTime').classList.remove('hidden');
+    if (stepNum === 4) { populateSummary(); document.getElementById('stepConfirm').classList.remove('hidden'); }
+    if (stepNum === 5) document.getElementById('stepSuccess').classList.remove('hidden');
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function handleBackNav() { if (bookingState.step > 1) goToStep(bookingState.step - 1); }
+function populateSummary() {
+    document.getElementById('summaryLocation').innerText = bookingState.location.name;
+    document.getElementById('summaryService').innerText  = bookingState.service.name + ' (' + bookingState.selectedOption.duration + ' Mins)';
+    document.getElementById('summaryDateTime').innerText = bookingState.date + ' @ ' + bookingState.timeSlot;
+    document.getElementById('summaryPrice').innerText    = money(bookingState.selectedOption.price);
+    document.getElementById('summaryLocation').title = bookingState.location.address;
+}
+
+/* ============================================================
+   10. STEP 4 — CONFIRM IN CLOUD, THEN WHATSAPP
+   ============================================================ */
+async function handleFormSubmit(e) {
+    e.preventDefault();
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const label = submitBtn.querySelector('span');
+
+    const name  = document.getElementById('custName').value.trim();
+    const phone = cleanPhone(document.getElementById('custPhone').value);
+    const notes = document.getElementById('custNotes').value.trim() || 'None';
+
+    if (name.length < 2) { alert('Please enter your full name.'); return; }
+    if (!/^[6-9]\d{9}$/.test(phone)) { alert('Please enter a valid 10-digit mobile number starting with 6, 7, 8 or 9.'); return; }
+    if (!holdToken) { alert('Your 7-minute hold has expired. Please choose a time again.'); goToStep(3); renderTimeSlots(); return; }
+
+    submitBtn.disabled = true; label.innerText = 'Confirming…';
+    const refCode = 'TL-' + Math.floor(100000 + Math.random() * 900000);
+
+    const { data, error } = await sb.rpc('confirm_booking', {
+        p_token: holdToken,
+        p_ref: refCode,
+        p_loc_name: bookingState.location.name,
+        p_service_id: bookingState.service.id,
+        p_service_name: bookingState.service.name + ' (' + bookingState.selectedOption.duration + ' Mins)',
+        p_price: bookingState.selectedOption.price,
+        p_name: name,
+        p_phone: phone,
+        p_notes: notes,
+        p_source: 'online',
+        p_created_by: null
+    });
+
+    submitBtn.disabled = false; label.innerText = 'Confirm Booking via WhatsApp';
+
+    if (error || data !== 'ok') {
+        if (data === 'expired') {
+            holdToken = null; stopHoldCountdown();
+            alert('Your hold expired. Please pick a time again.');
+            goToStep(3); renderTimeSlots();
+        } else {
+            alert('Could not save your booking. Please check your internet and try again.');
+        }
+        return;
+    }
+
+    holdToken = null; stopHoldCountdown();
+    bookingState.refCode = refCode;
+    bookingState.customer = { name, phone, notes };
+
+    const waMsg =
+'*NEW APPOINTMENT BOOKING*\n' +
+'----------------------------------------\n' +
+'*Ref Code:* ' + refCode + '\n' +
+'*Sanctuary:* ' + bookingState.location.name + '\n' +
+'*Service:* ' + bookingState.service.name + ' (' + bookingState.selectedOption.duration + ' Mins)\n' +
+'*Date:* ' + bookingState.date + '\n' +
+'*Time Slot:* ' + bookingState.timeSlot + '\n' +
+'*Price:* ' + money(bookingState.selectedOption.price) + '\n\n' +
+'*GUEST DETAILS:*\n' +
+'*Name:* ' + name + '\n' +
+'*Phone:* +91 ' + phone + '\n' +
+'*Chat:* https://wa.me/91' + phone + '\n' +
+'*Notes:* ' + notes + '\n' +
+'----------------------------------------\n' +
+'This slot is now locked in the scheduler.';
+
+    document.getElementById('succRef').innerText     = refCode;
+    document.getElementById('succLoc').innerText     = bookingState.location.name;
+    document.getElementById('succService').innerText = bookingState.service.name;
+    document.getElementById('succTime').innerText    = bookingState.date + ' @ ' + bookingState.timeSlot;
+
+    window.open('https://api.whatsapp.com/send?phone=' + bookingState.location.phone + '&text=' + encodeURIComponent(waMsg), '_blank');
+    goToStep(5);
+}
+
+/* ============================================================
+   11. .ICS CALENDAR FILE
+   ============================================================ */
+function downloadCalendarEvent() {
+    if (!bookingState.date || bookingState.startMinutes == null) return;
+    const [y, m, d] = bookingState.date.split('-').map(Number);
+    const startLocal = new Date(y, m - 1, d, Math.floor(bookingState.startMinutes / 60), bookingState.startMinutes % 60);
+    const endLocal   = new Date(startLocal.getTime() + bookingState.selectedOption.duration * 60000);
+    const utc = dt => dt.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+
+    const ics =
+'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Thalasso Luxe Wellness//Booking Engine//EN\r\nBEGIN:VEVENT\r\n' +
+'UID:' + bookingState.refCode + '@thalassoluxe\r\n' +
+'DTSTAMP:' + utc(new Date()) + '\r\n' +
+'DTSTART:' + utc(startLocal) + '\r\n' +
+'DTEND:' + utc(endLocal) + '\r\n' +
+'SUMMARY:' + bookingState.service.name + ' - Thalasso Luxe\r\n' +
+'DESCRIPTION:Appointment at ' + bookingState.location.name + '. Ref: ' + bookingState.refCode + '\r\n' +
+'LOCATION:' + bookingState.location.address + '\r\n' +
+'STATUS:CONFIRMED\r\nEND:VEVENT\r\nEND:VCALENDAR';
+
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar;charset=utf-8;' }));
+    link.download = 'Thalasso_Booking_' + bookingState.refCode + '.ics';
+    document.body.appendChild(link); link.click(); link.remove();
+}
+
+async function resetApp() {
+    await releaseHold();
+    bookingState = { step: 1, location: null, service: null, selectedOption: null,
+                     date: null, timeSlot: null, startMinutes: null, customer: {} };
+    document.getElementById('bookingForm').reset();
+    generateDates();
+        SERVICES = SERVICES_STD;
+    renderCategories();
+    renderServices('All');
+    goToStep(1);
+}
+
+/* ============================================================
+   12. DAY VIEW CONSOLE  (staff only — needs Supabase login)
+   ============================================================ */
+let DV = { date: null, branch: 'all', rows: [] };
+
+function dvInitPickers() {
+    const today = ymdLocal(new Date());
+    document.getElementById('dvDate').value = today;
+    document.getElementById('aDate').value  = today;
+    document.getElementById('dvBranch').innerHTML = '<option value="all">All branches</option>' +
+        LOCATIONS.map(l => `<option value="${l.id}">${esc(l.name)}</option>`).join('');
+    document.getElementById('aLoc').innerHTML =
+        LOCATIONS.map(l => `<option value="${l.id}">${esc(l.name)}</option>`).join('');
+    dvFillSrv();
+
+    const nm = nowMins();
+    document.getElementById('aTime').value = pad2(Math.floor(nm / 60)) + ':' + pad2(nm % 60);
+
+    document.getElementById('aLoc').onchange  = () => { dvFillSrv(); aUpdateEnds(); aTherRefresh(); };
+    document.getElementById('aSrv').onchange  = () => { aUpdateEnds(); aTherRefresh(); };
+    document.getElementById('aTime').oninput  = () => { aUpdateEnds(); aTherRefresh(); };
+    document.getElementById('aDate').onchange = aTherRefresh;
+    aUpdateEnds();
+
+    document.getElementById('dvDate').onchange   = dvLoad;
+    document.getElementById('dvBranch').onchange = dvLoad;
+    thInit();
+
+    document.addEventListener('keydown', e => {
+        if (e.shiftKey && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'd') { e.preventDefault(); dvGate(); }
+    });
+    if (location.hash === '#staff') setTimeout(dvGate, 300);
+    window.addEventListener('hashchange', () => { if (location.hash === '#staff') dvGate(); });
+}
+/* "13:10" -> 790 minutes. Returns null if blank/invalid. */
+function textToMins(v) {
+    if (!v) return null;
+    const p = String(v).split(':');
+    const h = Number(p[0]), m = Number(p[1]);
+    if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
+    return h * 60 + m;
+}
+
+/* Live "ends 2:10 PM" preview under the staff time field. */
+function aUpdateEnds() {
+    const el = document.getElementById('aEnds');
+    if (!el) return;
+    const start = textToMins(document.getElementById('aTime').value);
+    const dur   = Number((document.getElementById('aSrv').value || '').split('|')[1]);
+    if (start === null || !dur) { el.innerText = 'ends --'; el.className = 'text-[11px] text-sand-800 whitespace-nowrap'; return; }
+    const end = start + dur;
+    el.innerText = 'ends ' + minsToText(end) + ' (' + dur + 'm)';
+    el.className = 'text-[11px] whitespace-nowrap font-semibold ' +
+        (end > CLOSE_MIN || start < OPEN_MIN ? 'text-rose-700' : 'text-emerald-700');
+}
+function dvFillSrv() {
+    const list = menuFor(document.getElementById('aLoc').value);
+    document.getElementById('aSrv').innerHTML = list.flatMap(s =>
+        s.options.map(o => `<option value="${s.id}|${o.duration}|${o.price}">${esc(s.name)} — ${o.duration}m — ${money(o.price)}</option>`)).join('');
+}
+
+async function dvGate() {
+    let session = (await sb.auth.getSession()).data.session;
+    if (!session) {
+        const email = prompt('Staff email'); if (!email) return;
+        const password = prompt('Password');  if (!password) return;
+        const { error } = await sb.auth.signInWithPassword({ email: email.trim(), password });
+        if (error) { alert('Login failed: ' + error.message); return; }
+    }
+    document.getElementById('dvModal').classList.remove('hidden');
+    dvLoad();
+}
+function dvClose() {
+    document.getElementById('dvModal').classList.add('hidden');
+    if (location.hash === '#staff') history.replaceState(null, '', location.pathname);
+}
+async function dvLogout() {
+    await sb.auth.signOut();
+    dvClose();
+    alert('Logged out.');
+}
+function dvShowAdd() { document.getElementById('dvAdd').classList.toggle('hidden'); }
+
+async function dvLoad() {
+    DV.date   = document.getElementById('dvDate').value || ymdLocal(new Date());
+    DV.branch = document.getElementById('dvBranch').value;
+    document.getElementById('dvGrid').innerHTML = '<div class="p-6 text-sand-800">Loading…</div>';
+
+    let q = sb.from('bookings').select('*').eq('date', DV.date).eq('kind', 'booking');
+    if (DV.branch !== 'all') q = q.eq('loc_id', DV.branch);
+    const { data, error } = await q;
+
+    if (error) {
+        document.getElementById('dvGrid').innerHTML =
+            '<div class="p-6 text-red-700">Could not load. You may need to log in again. (' + esc(error.message) + ')</div>';
+        return;
+    }
+    DV.rows = (data || []).sort((a, b) => a.start_min - b.start_min);
+    dvKpi(); dvGrid(); dvList(); thLoad();
+}
+
+function dvKpi() {
+    const live = DV.rows.filter(b => b.status === 'confirmed');
+    const addons = live.reduce((s, b) => s + (b.addon_amt || 0), 0);
+    const rev = live.reduce((s, b) => s + (b.price || 0) + (b.addon_amt || 0), 0);
+    const isToday = DV.date === ymdLocal(new Date());
+    const n = nowMins();
+    const busy = live.filter(b => b.start_min <= n && b.end_min > n).length;
+    const total = DV.branch === 'all' ? LOCATIONS.reduce((s, l) => s + capOf(l.id), 0) : capOf(DV.branch);
+    const card = (a, b, c) => `<div class="bg-white border border-sand-200 rounded-xl p-3">
+        <div class="text-[10px] uppercase tracking-wide text-sand-800">${a}</div>
+        <div class="text-xl font-extrabold text-brand-900">${b}</div>
+        <div class="text-[10px] text-sand-800">${c}</div></div>`;
+    document.getElementById('dvKpi').innerHTML =
+        card('Bookings', live.length, (DV.rows.length - live.length) + ' cancelled / no-show') +
+        card('Revenue', money(rev), addons ? 'incl. ' + money(addons) + ' add-ons' : 'expected for the day') +
+        card('Phone / walk-in', live.filter(b => b.source !== 'online').length, 'of ' + live.length + ' total') +
+        card('In session now', isToday ? busy + ' / ' + total : '—', isToday ? 'rooms occupied' : 'not today');
+}
+
+function dvGrid() {
+    const live = DV.rows.filter(b => b.status === 'confirmed');
+    const times = [];
+    for (let t = OPEN_MIN; t < CLOSE_MIN; t += SLOT_STEP) times.push(t);
+    const isToday = DV.date === ymdLocal(new Date());
+    const n = nowMins();
+    let head, body;
+
+    if (DV.branch === 'all') {
+        head = LOCATIONS.map(l => `<th class="px-2 py-1.5 font-bold text-brand-900 whitespace-nowrap">${esc(l.name.replace(' Sanctuary',''))}</th>`).join('');
+        body = times.map(t => {
+            const rowCls = isToday && n >= t && n < t + SLOT_STEP ? 'bg-amber-50' : '';
+            return `<tr class="${rowCls}"><td class="px-2 py-1 text-sand-800 whitespace-nowrap border-t border-sand-100">${minsToText(t)}</td>` +
+                LOCATIONS.map(l => {
+                    const c = live.filter(b => b.loc_id === l.id && b.start_min < t + SLOT_STEP && b.end_min > t).length;
+                    const k = capOf(l.id);
+                    const cls = c === 0 ? 'bg-white text-sand-800' : (c >= k ? 'bg-rose-100 text-rose-900 font-bold' : 'bg-emerald-50 text-emerald-900 font-semibold');
+                    return `<td class="px-2 py-1 text-center border-t border-l border-sand-100 ${cls}">${c}/${k}</td>`;
+                }).join('') + '</tr>';
+        }).join('');
+        } else {
+        const k = capOf(DV.branch);
+        const inSession = x => isToday && x.start_min <= n && x.end_min > n;
+        const first = x => esc(String(x.name || '').split(' ')[0]);
+        head = Array.from({ length: k }, (_, i) => {
+            const busy = live.some(x => x.room_no === i + 1 && inSession(x));
+            return `<th class="px-2 py-1.5 font-bold text-brand-900">Room ${i + 1}` +
+                (isToday ? `<div class="text-[10px] font-semibold ${busy ? 'text-rose-700' : 'text-emerald-700'}">${busy ? 'Busy' : 'Free'}</div>` : '') + '</th>';
+        }).join('') + '<th class="px-2 py-1.5 font-bold text-amber-800">Unassigned</th>';
+
+        body = times.map(t => {
+            const rowCls = isToday && n >= t && n < t + SLOT_STEP ? 'bg-amber-50' : '';
+            const hit = x => x.start_min < t + SLOT_STEP && x.end_min > t;
+            const starts = x => x.start_min >= t && x.start_min < t + SLOT_STEP;
+            const roomCells = Array.from({ length: k }, (_, i) => {
+                const b = live.find(x => x.room_no === i + 1 && hit(x));
+                if (!b) return '<td class="px-2 py-1 border-t border-l border-sand-100 bg-white"></td>';
+                const cls = inSession(b) ? 'bg-rose-100 text-rose-900' : 'bg-emerald-100 text-emerald-900';
+                return `<td class="px-2 py-1 border-t border-l border-sand-100 ${cls}">` +
+                    (starts(b) ? `<div class="font-bold leading-tight">${minsToText(b.start_min)} ${first(b)}</div>
+                                  <div class="leading-tight">${esc(String(b.service_name || '').slice(0, 20))}</div>` : '') + '</td>';
+            }).join('');
+            const un = live.filter(x => !x.room_no && hit(x));
+            const unCell = `<td class="px-2 py-1 border-t border-l border-sand-100 ${un.length ? 'bg-amber-100 text-amber-900 font-semibold' : 'bg-white'}">` +
+                un.filter(starts).map(x => `<div class="leading-tight">${minsToText(x.start_min)} ${first(x)}</div>`).join('') + '</td>';
+            return `<tr class="${rowCls}"><td class="px-2 py-1 text-sand-800 whitespace-nowrap border-t border-sand-100">${minsToText(t)}</td>${roomCells}${unCell}</tr>`;
+        }).join('');
+    }
+
+    document.getElementById('dvGrid').innerHTML = `<table class="border-collapse w-full">
+        <thead><tr class="bg-sand-100"><th class="px-2 py-1.5 text-left text-sand-800">Time</th>${head}</tr></thead>
+        <tbody>${body}</tbody></table>`;
+}
+
+function dvList() {
+    if (!DV.rows.length) {
+        document.getElementById('dvList').innerHTML =
+            '<div class="bg-white border border-sand-200 rounded-xl p-6 text-center text-sand-800 text-sm">No bookings for this day.</div>';
+        return;
+    }
+    document.getElementById('dvList').innerHTML = DV.rows.map(b => {
+        const dead = b.status !== 'confirmed';
+        const tag = b.status === 'cancelled' ? 'bg-rose-100 text-rose-800'
+                  : b.status === 'noshow'    ? 'bg-amber-100 text-amber-800'
+                                             : 'bg-emerald-100 text-emerald-800';
+        return `<div class="bg-white border border-sand-200 rounded-xl p-3 ${dead ? 'opacity-55' : ''}">
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+                <span class="font-extrabold text-brand-900">${minsToText(b.start_min)}–${minsToText(b.end_min)}</span>
+                <span class="px-2 py-0.5 rounded-full ${tag} font-semibold">${esc(b.status)}</span>
+                <span class="px-2 py-0.5 rounded-full bg-sand-100 text-sand-800">${esc(b.source)}</span>
+                <span class="px-2 py-0.5 rounded-full ${b.room_no ? 'bg-sand-100 text-sand-800 font-semibold' : 'bg-amber-100 text-amber-800'}">${b.room_no ? 'Room ' + b.room_no : 'no room'}</span>
+                <span class="px-2 py-0.5 rounded-full ${b.therapist_name ? 'bg-indigo-100 text-indigo-800 font-semibold' : 'bg-amber-100 text-amber-800'}">${b.therapist_name ? esc(b.therapist_name) : 'no therapist'}</span>
+                <span class="ml-auto font-mono text-sand-800">${esc(b.ref || '--')}</span>
+            </div>
+            <div class="mt-1 text-sm font-bold text-brand-900">${esc(b.name)} · ${esc(b.service_name)}</div>
+            <div class="text-xs text-sand-800">${esc(b.loc_name)} · ${b.duration} mins · ${money(b.price)}${b.addon_amt ? ' + ' + money(b.addon_amt) + ' add-on' : ''}${b.notes && b.notes !== 'None' ? ' · ' + esc(b.notes) : ''}</div>
+                ${b.addon_text ? `<div class="text-xs text-indigo-800 font-semibold">Add-on: ${esc(b.addon_text)}${b.addon_amt ? ' · ' + money(b.addon_amt) : ''}</div>` : ''}
+                ${b.orig_duration ? `<div class="text-xs text-amber-800 font-semibold">Changed from ${b.orig_duration} min · ${money(b.orig_price)} · by ${esc(b.adjusted_by || 'staff')} at ${new Date(b.adjusted_at).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })}</div>` : ''}
+                <div class="mt-2 flex flex-wrap gap-2 no-print">
+                <a href="tel:+91${esc(b.phone)}" class="px-2.5 py-1 bg-brand-100 text-brand-800 rounded-lg text-[11px] font-semibold">Call</a>
+                <a href="https://wa.me/91${esc(b.phone)}" target="_blank" class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg text-[11px] font-semibold">WhatsApp</a>
+                ${dead ? '' : `<button onclick="dvAssign('${b.id}')" class="px-2.5 py-1 bg-indigo-100 text-indigo-800 rounded-lg text-[11px] font-semibold">${b.therapist_name ? 'Change therapist' : 'Assign therapist'}</button>`}
+                ${dead ? '' : dvRoomSelect(b)}
+                ${dead ? '' : `<button onclick="dvDurToggle('${b.id}', this)" class="px-2.5 py-1 bg-violet-100 text-violet-800 rounded-lg text-[11px] font-semibold">Change duration</button>`}
+                ${dead ? '' : `<button onclick="dvMark('${b.id}','noshow')" class="px-2.5 py-1 bg-amber-100 text-amber-800 rounded-lg text-[11px] font-semibold">No-show</button>
+                <button onclick="dvMark('${b.id}','cancelled')" class="px-2.5 py-1 bg-rose-100 text-rose-800 rounded-lg text-[11px] font-semibold">Cancel</button>`}
+            </div></div>`;
+    }).join('');
+}
+
+async function dvMark(id, status) {
+    const b = DV.rows.find(r => r.id === id); if (!b) return;
+    if (!confirm('Mark ' + b.name + ' at ' + minsToText(b.start_min) + ' as ' + status + '?')) return;
+    const { error } = await sb.from('bookings').update({ status }).eq('id', id);
+    if (error) { alert('Could not save: ' + error.message); return; }
+    dvLoad();
+}
+
+function dvDurToggle(id, btn) {
+    const b = DV.rows.find(r => r.id === id); if (!b) return;
+    const row  = btn.parentElement;
+    const card = row.parentElement;
+    const open = card.querySelector(':scope > .dur-panel');
+    if (open) { const same = open.dataset.id === id; open.remove(); if (same) return; }
+
+    const srv = SERVICES.find(s => s.id === b.service_id);
+    const chips = (srv ? srv.options : []).map(o =>
+        `<button type="button" onclick="dvDurPick('${id}', ${o.duration}, ${o.price})" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white border border-violet-300 text-violet-800">${o.duration} min · ${money(o.price)}</button>`
+    ).join('');
+
+    row.insertAdjacentHTML('afterend',
+        `<div class="dur-panel mt-2 p-2.5 bg-sand-50 border border-sand-200 rounded-lg space-y-2" data-id="${id}">
+            <div class="text-[11px] text-sand-800">Now: <strong>${b.duration} min · ${money(b.price)}</strong>. Tap a menu option, or type your own minutes and amount.</div>
+            <div class="flex flex-wrap gap-1.5">${chips}</div>
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+                <input id="dd-${id}" type="number" min="15" max="240" step="5" value="${b.duration}" class="w-20 p-2 border border-sand-200 rounded-lg"> min
+                <input id="dp-${id}" type="number" min="0" max="100000" step="1" value="${b.price}" class="w-28 p-2 border border-sand-200 rounded-lg"> ₹
+                <button onclick="dvDurSave('${id}')" class="px-3 py-1.5 bg-violet-700 text-white rounded-lg font-bold">Save change</button>
+            </div>
+        </div>`);
+}
+
+function dvDurPick(id, dur, price) {
+    document.getElementById('dd-' + id).value = dur;
+    document.getElementById('dp-' + id).value = price;
+}
+
+async function dvDurSave(id) {
+    const b = DV.rows.find(r => r.id === id); if (!b) return;
+    const dur   = Math.round(Number(document.getElementById('dd-' + id).value));
+    const price = Math.round(Number(document.getElementById('dp-' + id).value));
+    if (!dur || dur < 15 || dur > 240) { alert('Enter a duration between 15 and 240 minutes.'); return; }
+    if (isNaN(price) || price < 0)     { alert('Enter a valid amount.'); return; }
+
+    if (!confirm('CHANGE SESSION — ' + b.name + '\n\n' +
+                 'From: ' + b.duration + ' min · ' + money(b.price) + '  (ends ' + minsToText(b.end_min) + ')\n' +
+                 'To:   ' + dur + ' min · ' + money(price) + '  (ends ' + minsToText(b.start_min + dur) + ')\n\n' +
+                 'Revenue changes by ' + money(price - b.price) + '. OK to save?')) return;
+
+    const { data, error } = await sb.rpc('adjust_session', { p_booking_id: id, p_duration: dur, p_price: price });
+    if (error) { alert('Could not save: ' + error.message); return; }
+
+    const msg = {
+        ok: null,
+        no_change: 'Nothing changed.',
+        past_close: 'That would run past 11:00 PM closing.',
+        therapist_busy: 'The therapist has another booking in that extra time. Use Change therapist first, then extend.',
+        room_busy: 'This room is booked by another guest in that extra time. Use Change room first, then extend.',
+        centre_full: 'The centre is fully booked during the extra time.',
+        busy: 'The therapist or room is busy in that extra time.',
+        not_confirmed: 'Only confirmed bookings can be changed.',
+        bad_input: 'Check the minutes and amount.',
+        no_booking: 'That booking no longer exists.'
+    }[data];
+    if (msg) alert(msg);
+    dvLoad();
+}
+
+async function dvAddBooking(btn) {
+    const locId = document.getElementById('aLoc').value;
+    const loc   = LOCATIONS.find(l => l.id === locId);
+    const [sid, durStr, priceStr] = document.getElementById('aSrv').value.split('|');
+    const srv   = menuFor(locId).find(s => s.id === sid);
+    const duration = Number(durStr), price = Number(priceStr);
+    const date  = document.getElementById('aDate').value;
+    const start = textToMins(document.getElementById('aTime').value);
+    const name  = document.getElementById('aName').value.trim();
+    const phone = cleanPhone(document.getElementById('aPhone').value);
+    const source= document.getElementById('aSource').value;
+    const notes = document.getElementById('aNotes').value.trim() || 'None';
+    const therId= document.getElementById('aTher').value || null;
+    const addonText = document.getElementById('aAddon').value.trim();
+    const addonAmt  = Math.round(Number(document.getElementById('aAddonAmt').value) || 0);
+    const ther  = (TH.cands || []).find(c => c.id === therId);
+
+    if (name.length < 2) { alert('Enter the guest name.'); return; }
+    if (!/^[6-9]\d{9}$/.test(phone)) { alert('Enter a valid 10-digit mobile number.'); return; }
+    if (start === null) { alert('Enter a start time.'); return; }
+    if (start < OPEN_MIN) { alert('We open at ' + minsToText(OPEN_MIN) + '. Pick a later start.'); return; }
+    if (start + duration > CLOSE_MIN) { alert('That session would run past 11:00 PM.'); return; }
+    if (addonAmt < 0 || addonAmt > 100000) { alert('Add-on amount must be between 0 and 1,00,000.'); return; }
+    if (addonAmt > 0 && !addonText) { alert('Describe the add-on, or clear the amount.'); return; }
+
+
+    btn.disabled = true; btn.innerText = 'Saving…';
+    const ref = 'TL-' + Math.floor(100000 + Math.random() * 900000);
+    const who = (await sb.auth.getUser()).data.user?.email || 'staff';
+        let newId = null, hardError = null;
+    const ins = await sb.from('bookings').insert({
+        kind: 'booking', status: 'confirmed', ref: ref,
+        loc_id: locId, loc_name: loc.name,
+        service_id: srv.id, service_name: srv.name + ' (' + duration + ' Mins)',
+        duration: duration, price: price,
+        date: date, start_min: start, end_min: start + duration,
+        name: name, phone: phone, notes: notes, source: source,
+        addon_text: addonText || null, addon_amt: addonAmt,
+        created_by: who
+    }).select('id').single();
+    if (ins.error) hardError = ins.error.message; else newId = ins.data.id;
+
+    btn.disabled = false; btn.innerText = 'Save booking';
+        if (hardError) {
+        alert(hardError.includes('CENTRE_FULL')
+            ? 'The centre is fully booked at that time. Pick another slot.'
+            : 'Could not save: ' + hardError);
+        return;
+    }
+
+    let msg = 'Booked. Ref ' + ref;
+    if (therId) {
+        const { data, error } = await sb.rpc('assign_therapist', { p_booking_id: newId, p_therapist_id: therId });
+        if (error)          msg += '\n\n⚠️ Saved, but therapist not assigned: ' + error.message;
+        else if (data === 'ok') msg += '\nTherapist: ' + (ther ? ther.name : '');
+        else                msg += '\n\n⚠️ Saved WITHOUT a therapist — ' + thReason(data) + '\nAssign someone else from the list below.';
+    }
+    alert(msg);
+
+    document.getElementById('aName').value = '';
+    document.getElementById('aPhone').value = '';
+    document.getElementById('aNotes').value = '';
+    document.getElementById('dvDate').value = date;
+    document.getElementById('aAddon').value = '';
+    document.getElementById('aAddonAmt').value = '';
+    dvLoad();
+}
+
+function dvCsv() {
+    const cols = ['ref','date','start','end','loc_name','service_name','duration','price','addon_text','addon_amt','total','room_no','therapist_name','name','phone','status','source','created_by','notes'];
+    const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+    const body = DV.rows.map(r => cols.map(c =>
+        q(c === 'start' ? minsToText(r.start_min) : c === 'end' ? minsToText(r.end_min) : c === 'total' ? (r.price || 0) + (r.addon_amt || 0) : r[c])).join(',')).join('\n');
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob([cols.join(',') + '\n' + body], { type: 'text/csv;charset=utf-8;' }));
+    link.download = 'thalasso_' + DV.branch + '_' + DV.date + '.csv';
+    document.body.appendChild(link); link.click(); link.remove();
+}
+
+/* ============================================================
+   13. THERAPIST ATTENDANCE + AUTOMATIC ALLOCATION
+   ============================================================ */
+const TH_MAX = 20;
+let TH = { date: null, loc: null, roster: [], bookings: [], cands: [] };
+let aTherTimer = null;
+
+function thShowAdd() { document.getElementById('thAdd').classList.toggle('hidden'); }
+const aTherRefresh = () => { clearTimeout(aTherTimer); aTherTimer = setTimeout(aFillTherapists, 350); };
+
+function thReason(code) {
+    return ({
+        busy:           'she already has an overlapping booking',
+        on_leave:       'she is marked on leave for that date',
+        not_arrived:    'she has not arrived by that time',
+        shift_ended:    'that session runs past her shift end',
+        not_registered: 'she is not on the roster for that centre and date',
+        no_booking:     'the booking could not be found'
+    })[code] || ('unexpected result: ' + code);
+}
+
+function thInit() {
+    document.getElementById('tLoc').innerHTML =
+        LOCATIONS.map(l => `<option value="${l.id}">${esc(l.name)}</option>`).join('');
+    document.getElementById('tLoc').onchange = thLoadDir;
+    document.getElementById('tArr').value = '11:30';
+    setInterval(() => {
+        if (!document.getElementById('dvModal').classList.contains('hidden')) thRenderGrid();
+    }, 60000);
+}
+
+async function thLoadDir() {
+    const loc = document.getElementById('tLoc').value;
+    const { data } = await sb.from('therapists').select('name').eq('loc_id', loc).eq('active', true).order('name');
+    document.getElementById('tDir').innerHTML = (data || []).map(d => `<option value="${esc(d.name)}"></option>`).join('');
+}
+
+async function thLoad() {
+    TH.date = DV.date; TH.loc = DV.branch;
+    const box = document.getElementById('thGrid');
+    const cnt = document.getElementById('thCount');
+
+    if (DV.branch === 'all') {
+        TH.roster = [];
+        cnt.innerText = '';
+        box.innerHTML = '<div class="p-4 text-center text-sand-800">Pick a single centre above to see and manage its therapist roster.</div>';
+        return;
+    }
+    box.innerHTML = '<div class="p-4 text-sand-800">Loading roster…</div>';
+
+    const { data, error } = await sb.from('therapist_days')
+        .select('id,therapist_id,arrival_min,shift_end_min,on_leave,seq,therapists(name)')
+        .eq('loc_id', DV.branch).eq('date', DV.date);
+
+    if (error) { box.innerHTML = '<div class="p-4 text-red-700">Could not load roster: ' + esc(error.message) + '</div>'; return; }
+
+    TH.roster = (data || [])
+        .map(r => ({ ...r, name: r.therapists ? r.therapists.name : '—' }))
+        .sort((a, b) => a.arrival_min - b.arrival_min || (a.seq || 0) - (b.seq || 0));
+    TH.bookings = DV.rows.filter(b => b.status === 'confirmed' && b.therapist_id);
+
+    document.getElementById('tLoc').value = DV.branch;
+    thLoadDir();
+    thRenderGrid();
+}
+
+function thStatus(r) {
+    const isToday = TH.date === ymdLocal(new Date());
+    const n = nowMins();
+    const ended = r.shift_end_min !== null;
+    if (r.on_leave) return { label: 'On Leave', cls: 'bg-sand-100 text-sand-800', sub: '' };
+    if (ended && (!isToday || n >= r.shift_end_min))
+        return { label: 'On Leave', cls: 'bg-sand-100 text-sand-800', sub: 'shift ended ' + minsToText(r.shift_end_min) };
+    if (!isToday) return { label: 'Available', cls: 'bg-emerald-100 text-emerald-800', sub: 'scheduled' };
+    if (n < r.arrival_min) return { label: 'Not Arrived', cls: 'bg-amber-100 text-amber-800', sub: 'due ' + minsToText(r.arrival_min) };
+    const live = TH.bookings.find(b => b.therapist_id === r.therapist_id && b.start_min <= n && b.end_min > n);
+    if (live) return { label: 'Busy / In Session', cls: 'bg-rose-100 text-rose-800', sub: 'till ' + minsToText(live.end_min) };
+    return { label: 'Available', cls: 'bg-emerald-100 text-emerald-800', sub: 'on duty' };
+}
+
+function thRenderGrid() {
+    const box = document.getElementById('thGrid');
+    const cnt = document.getElementById('thCount');
+    if (TH.loc === 'all') return;
+    cnt.innerText = TH.roster.length + ' of ' + TH_MAX + ' registered';
+
+    if (!TH.roster.length) {
+        box.innerHTML = '<div class="p-4 text-center text-sand-800">No therapists on the roster for this date. Use <strong>+ Add Therapist</strong>.</div>';
+        return;
+    }
+    const rows = TH.roster.map(r => {
+        const s = thStatus(r);
+        const next = TH.bookings.filter(b => b.therapist_id === r.therapist_id).length;
+        const endCell = r.shift_end_min === null
+            ? `<span class="text-sand-800">on duty</span>
+               <button onclick="thEndShift('${r.id}')" class="ml-1.5 px-2 py-0.5 rounded bg-brand-100 text-brand-800 font-semibold">End shift</button>`
+            : `<span class="font-semibold">${minsToText(r.shift_end_min)}</span>
+               <button onclick="thReopen('${r.id}')" class="ml-1.5 underline text-sand-800">reopen</button>`;
+        return `<tr class="border-t border-sand-100">
+            <td class="px-2 py-2 font-bold text-brand-900 whitespace-nowrap">${esc(r.name)}
+                <span class="font-normal text-sand-800">· ${next} today</span></td>
+            <td class="px-2 py-2 whitespace-nowrap">${minsToText(r.arrival_min)}</td>
+            <td class="px-2 py-2 whitespace-nowrap">${endCell}</td>
+            <td class="px-2 py-2 whitespace-nowrap">
+                <span class="px-2 py-0.5 rounded-full font-semibold ${s.cls}">${s.label}</span>
+                ${s.sub ? `<span class="text-sand-800 ml-1">${esc(s.sub)}</span>` : ''}
+                <button onclick="thLeave('${r.id}',${r.on_leave ? 'false' : 'true'})" class="ml-2 underline text-sand-800">${r.on_leave ? 'back on duty' : 'mark on leave'}</button>
+                <button onclick="thRemove('${r.id}','${esc(r.name)}')" class="ml-2 underline text-sand-800">remove</button>
+            </td></tr>`;
+    }).join('');
+
+    box.innerHTML = `<table class="border-collapse w-full min-w-max">
+        <thead><tr class="bg-sand-100 text-left text-sand-800">
+            <th class="px-2 py-1.5">Therapist</th><th class="px-2 py-1.5">Arrival Time</th>
+            <th class="px-2 py-1.5">Shift End Time</th><th class="px-2 py-1.5">Status</th>
+        </tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+async function thSave(btn) {
+    const locId = document.getElementById('tLoc').value;
+    const date  = document.getElementById('dvDate').value;
+    const name  = document.getElementById('tName').value.trim().replace(/\s+/g, ' ');
+    const arr   = textToMins(document.getElementById('tArr').value);
+
+    if (name.length < 2) { alert('Enter the therapist name.'); return; }
+    if (arr === null) { alert('Enter the arrival time.'); return; }
+
+    btn.disabled = true; btn.innerText = 'Saving…';
+    let tid = null;
+    const found = await sb.from('therapists').select('id').eq('loc_id', locId).ilike('name', name).limit(1);
+    if (found.data && found.data.length) tid = found.data[0].id;
+    else {
+        const ins = await sb.from('therapists').insert({ loc_id: locId, name: name }).select('id').single();
+        if (ins.error) { btn.disabled = false; btn.innerText = 'Save therapist'; alert('Could not save: ' + ins.error.message); return; }
+        tid = ins.data.id;
+    }
+
+    const { error } = await sb.from('therapist_days').insert({
+    therapist_id: tid, loc_id: locId, date: date, arrival_min: arr, shift_end_min: null
+    });
+    btn.disabled = false; btn.innerText = 'Save therapist';
+
+    if (error) {
+        alert(error.code === '23505'
+            ? name + ' is already on the roster for ' + date + '.'
+            : 'Could not save: ' + error.message);
+        return;
+    }
+    document.getElementById('tName').value = '';
+    document.getElementById('dvBranch').value = locId;
+    dvLoad(); aTherRefresh();
+}
+
+async function thLeave(dayId, val) {
+    const r = TH.roster.find(x => x.id === dayId); if (!r) return;
+    if (val && TH.bookings.some(b => b.therapist_id === r.therapist_id)) {
+        if (!confirm(r.name + ' already has bookings today. Mark her on leave anyway? Those bookings stay assigned — reassign them from the list below.')) return;
+    }
+    const { error } = await sb.from('therapist_days').update({ on_leave: val }).eq('id', dayId);
+    if (error) { alert('Could not update: ' + error.message); return; }
+    dvLoad(); aTherRefresh();
+}
+
+async function thRemove(dayId, name) {
+    if (!confirm('Remove ' + name + " from this date's roster?")) return;
+    const { error } = await sb.from('therapist_days').delete().eq('id', dayId);
+    if (error) { alert('Could not remove: ' + error.message); return; }
+    dvLoad(); aTherRefresh();
+}
+
+async function thEndShift(dayId) {
+    const r = TH.roster.find(x => x.id === dayId); if (!r) return;
+    const nowTxt = minsToText(nowMins());
+
+    if (!confirm('END SHIFT — ' + r.name + '\n\nLog her shift end at about ' + nowTxt +
+                 '?\n\nShe will not be offered for any booking after that time today.\n\nClick OK only if she has actually left.')) return;
+
+    let res = await sb.rpc('end_shift', { p_day_id: dayId, p_force: false });
+    if (res.error) { alert('Could not end shift: ' + res.error.message); return; }
+
+    if (String(res.data).startsWith('has_sessions:')) {
+        const n = String(res.data).split(':')[1];
+        if (!confirm('⚠️ ' + r.name + ' still has ' + n + ' session(s) running now or booked later today.\n\n' +
+                     'Ending her shift will NOT cancel them — they stay assigned to her and must be reassigned from the booking list.\n\n' +
+                     'End her shift anyway?')) return;
+        res = await sb.rpc('end_shift', { p_day_id: dayId, p_force: true });
+        if (res.error) { alert('Could not end shift: ' + res.error.message); return; }
+    }
+
+    const code = String(res.data);
+    if (code.startsWith('ok:')) alert(r.name + "'s shift ended at " + minsToText(Number(code.split(':')[1])) + '.');
+    else if (code === 'not_today')      alert('Shift end can only be logged on the actual day. Switch the date to today.');
+    else if (code === 'before_arrival') alert('The current time is before her arrival time. Remove her from the roster instead.');
+    else if (code === 'not_found')      alert('That roster entry no longer exists.');
+    else                                alert('Unexpected result: ' + code);
+
+    dvLoad(); aTherRefresh();
+}
+
+async function thReopen(dayId) {
+    const r = TH.roster.find(x => x.id === dayId); if (!r) return;
+    if (!confirm('Reopen ' + r.name + "'s shift?\n\nThe logged end time of " + minsToText(r.shift_end_min) +
+                 ' will be cleared and she becomes available for bookings again.')) return;
+    const { error } = await sb.from('therapist_days').update({ shift_end_min: null }).eq('id', dayId);
+    if (error) { alert('Could not reopen: ' + error.message); return; }
+    dvLoad(); aTherRefresh();
+}
+
+/* ---- eligibility for one specific appointment interval ---- */
+async function thCandidates(locId, date, start, dur) {
+    const end = start + dur;
+    const [rosterRes, bkRes] = await Promise.all([
+        sb.from('therapist_days')
+          .select('therapist_id,arrival_min,shift_end_min,on_leave,seq,therapists(name)')
+          .eq('loc_id', locId).eq('date', date),
+        sb.from('bookings')
+          .select('therapist_id,start_min,end_min')
+          .eq('loc_id', locId).eq('date', date).eq('kind', 'booking')
+          .eq('status', 'confirmed').not('therapist_id', 'is', null)
+    ]);
+    const bk = bkRes.data || [];
+    return (rosterRes.data || []).map(r => {
+        let why = '';
+        if (r.on_leave)                 why = 'on leave';
+        else if (start < r.arrival_min) why = 'arrives ' + minsToText(r.arrival_min);
+        else if (r.shift_end_min !== null && end > r.shift_end_min) why = 'shift ended ' + minsToText(r.shift_end_min);
+        else {
+            const clash = bk.find(b => b.therapist_id === r.therapist_id && b.start_min < end && b.end_min > start);
+            if (clash) why = 'busy ' + minsToText(clash.start_min) + '–' + minsToText(clash.end_min);
+        }
+        return { id: r.therapist_id, name: r.therapists ? r.therapists.name : '—',
+                 arrival: r.arrival_min, seq: r.seq || 0, ok: !why, why: why };
+    }).sort((a, b) => a.arrival - b.arrival || a.seq - b.seq);
+}
+
+/* ---- auto-preselect the next therapist by arrival sequence ---- */
+async function aFillTherapists() {
+    const sel  = document.getElementById('aTher');
+    const note = document.getElementById('aTherNote');
+    if (!sel) return;
+    const locId = document.getElementById('aLoc').value;
+    const date  = document.getElementById('aDate').value;
+    const start = textToMins(document.getElementById('aTime').value);
+    const dur   = Number((document.getElementById('aSrv').value || '').split('|')[1]) || 60;
+
+    if (!locId || !date || start === null) {
+        sel.innerHTML = '<option value="">— No therapist —</option>';
+        note.innerHTML = '&nbsp;'; return;
+    }
+    sel.innerHTML = '<option value="">Checking…</option>';
+    TH.cands = await thCandidates(locId, date, start, dur);
+    const free = TH.cands.filter(c => c.ok);
+
+    sel.innerHTML = '<option value="">— No therapist —</option>' +
+        TH.cands.map(c => `<option value="${c.id}"${c.ok ? '' : ' disabled'}>${esc(c.name)} · ${minsToText(c.arrival)}${c.ok ? '' : ' — ' + esc(c.why)}</option>`).join('');
+
+    if (free.length) {
+        sel.value = free[0].id;
+        note.innerText = 'Auto-assigned: ' + free[0].name + ' (next by arrival). Change it if the guest asked for someone.';
+        note.className = 'text-[11px] text-emerald-700 font-semibold mt-1';
+    } else {
+        note.innerText = TH.cands.length
+            ? 'No therapist is free for ' + minsToText(start) + '–' + minsToText(start + dur) + '.'
+            : 'No therapists on the roster for this centre and date.';
+        note.className = 'text-[11px] text-rose-700 font-semibold mt-1';
+    }
+}
+
+/* ---- assign or change the therapist on an existing booking ---- */
+async function dvAssign(id) {
+    const b = DV.rows.find(r => r.id === id); if (!b) return;
+    const cands = await thCandidates(b.loc_id, b.date, b.start_min, b.duration);
+    if (!cands.length) { alert('No therapists are on the roster for ' + b.loc_name + ' on ' + b.date + '.'); return; }
+
+    const list = cands.map((c, i) => (i + 1) + '. ' + c.name + ' (' + minsToText(c.arrival) + ') — ' + (c.ok ? 'FREE' : c.why)).join('\n');
+    const pick = prompt('Assign a therapist to ' + b.name + ', ' + minsToText(b.start_min) + '–' + minsToText(b.end_min) +
+                        '\n\n' + list + '\n\nType the number, or 0 to unassign:');
+    if (pick === null) return;
+    const idx = Number(pick);
+    if (!Number.isInteger(idx) || idx < 0 || idx > cands.length) { alert('That is not a valid number.'); return; }
+    const t = idx === 0 ? null : cands[idx - 1];
+
+    const { data, error } = await sb.rpc('assign_therapist', { p_booking_id: id, p_therapist_id: t ? t.id : null });
+    if (error) { alert('Could not assign: ' + error.message); return; }
+    if (data !== 'ok') { alert('Not assigned — ' + thReason(data) + '.'); return; }
+    dvLoad();
+}
+function dvRoomSelect(b) {
+    const k = capOf(b.loc_id);
+    const opts = Array.from({ length: k }, (_, i) => {
+        const r = i + 1;
+        const clash = DV.rows.find(x => x.id !== b.id && x.loc_id === b.loc_id && x.status === 'confirmed'
+            && x.room_no === r && x.start_min < b.end_min && x.end_min > b.start_min);
+        return `<option value="${r}"${b.room_no === r ? ' selected' : ''}${clash ? ' disabled' : ''}>Room ${r}${clash ? ' (busy ' + minsToText(clash.start_min) + '–' + minsToText(clash.end_min) + ')' : ''}</option>`;
+    }).join('');
+    return `<select onchange="dvAssignRoom('${b.id}', this.value)" class="px-2 py-1 border border-sand-200 rounded-lg text-[11px] font-semibold ${b.room_no ? 'bg-sand-100' : 'bg-amber-100'}">
+        <option value=""${b.room_no ? '' : ' selected'}>${b.room_no ? 'Unassign room' : 'Assign room…'}</option>${opts}</select>`;
+}
+
+async function dvAssignRoom(id, val) {
+    const room = val === '' ? null : Number(val);
+    const { data, error } = await sb.rpc('assign_room', { p_booking_id: id, p_room: room });
+    if (error) alert('Could not assign: ' + error.message);
+    else if (data === 'busy') alert('That room is already in use during this session.');
+    else if (data !== 'ok') alert('Not assigned: ' + data);
+    dvLoad();
+}
+
+</script>
+</body>
+</html>
