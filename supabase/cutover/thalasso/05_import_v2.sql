@@ -59,6 +59,9 @@ begin
     if r.addon_amt > 0 and (r.addon_text is null or trim(r.addon_text) = '') then r.addon_text := 'Add-on'; fix_addon_text := fix_addon_text + 1; end if;
     if length(r.addon_text) > 80 then r.addon_text := left(r.addon_text, 80); fix_addon_cut := fix_addon_cut + 1; end if;
     if r.addon_text is not null and trim(r.addon_text) = '' then r.addon_text := null; end if;
+    -- new columns added in migration 0015; old Thalasso data has no value for them
+    if r.payment_method is null then r.payment_method := 'pending'; end if;
+    if r.discount_amt    is null then r.discount_amt   := 0;         end if;
 
     if r.ref is not null and exists (select 1 from public.bookings where tenant_id = v_tenant.id and ref = r.ref) then
       v_base := r.ref; v_try := 2;
