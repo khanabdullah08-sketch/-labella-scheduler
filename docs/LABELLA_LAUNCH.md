@@ -67,14 +67,21 @@ logins never see it). Edit any price (whole rupees) or untick **Active**, press 
 The booking page, the guest menu and the phone / walk-in form all use the new price straight away; bookings already
 made keep the price they were booked at. Guests who were mid-booking at the old price are asked to refresh.
 
-## Adding or renaming treatments later
-That is still a seed change: edit `tenants/labella/catalog.json`, run `npm run seed:labella`, paste
-`supabase/seed/labella.sql` into the SQL Editor. Re-running the seed **never resets prices or on/off switches** that
-were set in the Menu & Prices tab (it only adds missing treatments/durations and updates names, descriptions, branches).
-To retire a treatment, untick every duration in the tab.
+## Adding or renaming treatments (no Supabase, no redeploy)
+In **Menu & Prices**: **+ Add treatment** at the top of a menu (name, category, description, one or more minutes + price;
+tick the other branch's menu to add it there too), **+ duration** and **edit details** next to each treatment.
+They are saved at once (not with "Save changes") and the booking page shows them straight away. A treatment can be
+switched off (hidden from guests and walk-ins, history kept) but not deleted.
+Re-running a seed (`npm run seed:labella`) **never resets prices, on/off switches or treatments edited in the tab**;
+it only adds missing seed treatments and repairs untouched ones. Migrations `20261124000500` to `20261124000700` must be run first.
+
+## Phone / walk-in console
+Add-ons (text + amount) on a booking, bookings start with **no room** (pick one with the room selector; the database
+refuses to overbook a branch), "Change duration" (owner / manager may type their own minutes and price), and the
+Unassigned column in the room grid. All three are switched by `features` in `tenants/labella/tenant.json`.
+Run the migrations `20261124000100` to `20261124000700` (in order) in the SQL Editor to get them.
 
 ## Known limits
-- Price and on/off edits are live. New treatments, new durations and renames are not (see above).
 - The built page still contains the original `catalog.json` menu as a fallback if the live menu cannot be fetched
   (for example while offline). In that case the database still charges its own price and refuses a stale one.
 - Therapist names are shown with "she/her" wording in a few staff messages (unchanged from Client 1).

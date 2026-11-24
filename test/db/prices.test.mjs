@@ -98,8 +98,10 @@ test('front desk cannot change a price or switch a duration off: the update touc
   // and they cannot add or delete options either
   const svc = (await db.query(`select id, tenant_id from services where code = 'df06'`)).rows[0];
   assert.match(await rejected(asUser(db, ids.deskDef, () => db.query(
-    `insert into service_options (tenant_id, service_id, duration_min, price) values ($1, $2, 45, 100)`, [svc.tenant_id, svc.id]))), /row-level security/i);
-  await asUser(db, ids.deskDef, () => db.query(`delete from service_options where id = $1`, [id]));
+    `insert into service_options (tenant_id, service_id, duration_min, price) values ($1, $2, 45, 100)`, [svc.tenant_id, svc.id]))), /row-level security|permission denied/i);
+  // nobody can delete options from the browser any more (switch them off instead)
+  assert.match(await rejected(asUser(db, ids.deskDef, () => db.query(`delete from service_options where id = $1`, [id]))), /permission denied/i);
+  assert.match(await rejected(asUser(db, ids.owner, () => db.query(`delete from service_options where id = $1`, [id]))), /permission denied/i);
   assert.deepEqual(await priceOf(id), before);
 });
 

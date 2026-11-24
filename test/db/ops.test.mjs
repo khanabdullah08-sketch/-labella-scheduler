@@ -29,11 +29,11 @@ test('the staff console can add therapists without sending tenant or branch ids'
   assert.match(await rejected(addTherapist(ids.deskDef, 'cp', 'Wrong Branch', 700)), /row-level security|violates/i);
 });
 
-test('staff phone booking: price from the menu, room chosen by the database, LB- reference', async () => {
+test('staff phone booking: price from the menu, starts without a room, LB- reference', async () => {
   const r = await staffBook(ids.deskDef, 'def', 'df06', 60, 780);
   assert.equal(r.status, 'ok'); assert.match(r.ref, /^LB-\d{6}$/);
   const b = (await db.query(`select price, source, created_by, room_no from bookings where id = $1`, [r.id])).rows[0];
-  assert.deepEqual(b, { price: 2799, source: 'walkin', created_by: 'def@lb.test', room_no: 1 });
+  assert.deepEqual(b, { price: 2799, source: 'walkin', created_by: 'def@lb.test', room_no: null });   // room is assigned later
   assert.equal((await staffBook(ids.deskDef, 'def', 'df06', 60, 600)).status, 'closed');      // before opening
   assert.equal((await staffBook(ids.owner, 'cp', 'cp03', 60, 1290)).status, 'closed');         // runs past CP closing (22:00)
   assert.equal((await staffBook(ids.owner, 'def', 'cp03', 60, 780)).status, 'invalid');        // service not on DEF menu
@@ -42,8 +42,8 @@ test('staff phone booking: price from the menu, room chosen by the database, LB-
 test('therapist assignment: ok, busy on overlap, not_arrived, on_leave, shift_ended', async () => {
   const meena = (await db.query(`select id from therapists where name = 'Meena Rao'`)).rows[0].id;
   const a = await staffBook(ids.deskDef, 'def', 'df06', 60, 900);
-  const b = await staffBook(ids.deskDef, 'def', 'df06', 60, 930);        // overlaps a, goes to another room
-  assert.notEqual(a.room, b.room);
+  const b = await staffBook(ids.deskDef, 'def', 'df06', 60, 930);        // overlaps a; the branch has free rooms
+  assert.equal(a.status, 'ok'); assert.equal(b.status, 'ok');
   const assign = (id, th) => rpc(ids.deskDef, `select assign_therapist($1::uuid, $2::uuid) r`, [id, th]);
   assert.equal(await assign(a.id, meena), 'ok');
   assert.equal(await assign(b.id, meena), 'busy');                       // same therapist, overlapping time

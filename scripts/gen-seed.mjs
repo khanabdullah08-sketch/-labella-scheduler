@@ -20,7 +20,11 @@ export function generateSeed(tenant) {
   const dir = path.join(ROOT, 'tenants', tenant);
   const t = JSON.parse(fs.readFileSync(path.join(dir, 'tenant.json'), 'utf8'));
   const cat = JSON.parse(fs.readFileSync(path.join(dir, 'catalog.json'), 'utf8'));
-  if (t.backend !== 'v2') throw new Error(`Tenant "${tenant}" uses the legacy backend; seeds are only for backend "v2".`);
+  /* A tenant that is still on its old database ("legacy") may have its seed generated ahead of the cut-over: the seed
+     only describes the menus and branches the shared v2 database will hold. It needs the v2 fields to be valid. */
+  if (!['legacy', 'v2'].includes(t.backend)) throw new Error(`Tenant "${tenant}": backend must be "legacy" or "v2".`);
+  if (!t.timezone) throw new Error(`Tenant "${tenant}": tenant.json needs a "timezone" (e.g. Asia/Kolkata) before a seed can be made.`);
+  if (!/^[A-Z0-9]{1,5}-?$/.test(t.brand.refPrefix)) throw new Error(`Tenant "${tenant}": brand.refPrefix must look like "TL-".`);
 
   const slug = q(t.slug);
   const r = t.rules;
@@ -73,7 +77,8 @@ ${svcRows}
 ) as v(code, category, name, description, sort)
 where t.slug = ${slug} and m.code = ${q(code)}
 on conflict (menu_id, code) do update set category = excluded.category, name = excluded.name,
-  description = excluded.description, sort = excluded.sort;`, '');
+  description = excluded.description, sort = excluded.sort
+  where not public.services.edited_in_ui;   -- a treatment edited in the Menu & Prices tab is never overwritten by a seed`, '');
 
     const optRows = list.flatMap(s => s.options.map((o, i) => `  (${q(s.id)}, ${o.duration}, ${o.price}, ${i})`)).join(',\n');
     out.push(`${mark('durations and prices of menu ' + code)}

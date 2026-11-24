@@ -38,8 +38,10 @@ test('thalasso build reproduces the original hardcoded data exactly', () => {
     assert.equal(nu.phone, old.phone);
     assert.equal(nu.address, old.address);
     assert.equal(nu.rooms, b.ROOMS[old.id]);
-    const oldMenu = b.MENUS[old.id];
-    assert.deepEqual(appConfig.menus[nu.menu], JSON.parse(JSON.stringify(oldMenu)), 'menu of ' + old.id);
+    /* Two Hot Stone descriptions were reworded on purpose so the seed SQL cannot be misread by Supabase's SQL Editor
+       ("massaged into key body points" -> "massaged on key body points", see test/db/seed.test.mjs). Nothing else may differ. */
+    const reword = s => JSON.parse(JSON.stringify(s).replaceAll('massaged into key body points', 'massaged on key body points'));
+    assert.deepEqual(appConfig.menus[nu.menu], reword(b.MENUS[old.id]), 'menu of ' + old.id);
   }
   assert.equal(appConfig.branches.find(x => x.id === 'mg').menu, 'mg');
 });

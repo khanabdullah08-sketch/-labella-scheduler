@@ -51,7 +51,15 @@ test('the generated seed is built from the same catalog and is idempotent SQL', 
   assert.equal((sql.match(/on conflict/g) || []).length, 1 + 2 + 2 + 2 + 2);   // tenant + menus + branches + services + options
   assert.ok(sql.includes("'919650239579'") && sql.includes("'919650517251'"));
   assert.ok(sql.includes('Defence Colony Menu') && sql.includes('Connaught Place Menu'));
-  assert.throws(() => generateSeed('thalasso'), /legacy backend/);
+  assert.throws(() => generateSeed('nope nope'), /Usage/);
   assert.equal(sql, fs.readFileSync(path.join(ROOT, 'supabase/seed/labella.sql'), 'utf8'),
     'seed file is stale; run: node scripts/gen-seed.mjs labella');
+});
+
+test('the Thalasso seed is built from the same catalog and is not stale', () => {
+  const sql = generateSeed('thalasso');
+  assert.ok(sql.includes("'919220228407'") && sql.includes("'918287825534'") && sql.includes("'919220228408'"));
+  assert.ok(sql.includes("'TL-'") && sql.includes("'Asia/Kolkata'"));
+  assert.equal(sql, fs.readFileSync(path.join(ROOT, 'supabase/seed/thalasso.sql'), 'utf8'),
+    'seed file is stale; run: node scripts/gen-seed.mjs thalasso');
 });

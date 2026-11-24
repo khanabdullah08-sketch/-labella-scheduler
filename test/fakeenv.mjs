@@ -87,7 +87,10 @@ export function boot(outDir, appConfig, handler, opts) {
   vm.runInContext(fs.readFileSync(path.join(outDir, 'app.js'), 'utf8') + `
 ;this.__t = { LOCATIONS, menuFor, selectLocation, selectDate, selectServiceOption, selectTimeSlot, renderTimeSlots,
   handleFormSubmit, dvAddBooking, bookingState: () => bookingState, capOf, openOf, closeOf, cleanPhone, money, TH,
-  loadLiveCatalog, dvGate, dvApplyRole, dvTab, dvLogout, dvFillSrv, mpLoad, mpEdit, mpSave, MP: () => MP };`, env.ctx);
+  loadLiveCatalog, dvGate, dvApplyRole, dvTab, dvLogout, dvFillSrv, mpLoad, mpEdit, mpSave, MP: () => MP,
+  dvInitPickers, dvLoad, dvKpi, dvGrid, dvList, dvCsv, dvRoomSelect, dvAssignRoom, dvDurToggle, dvDurPick, dvDurSave,
+  DV: () => DV, FEATURES, mpOpenAdd, mpOpenDur, mpOpenEdit, mpFormSet, mpFormToggleMenu, mpFormRow, mpFormCancel, mpFormRender,
+  mpSubmitAdd, mpSubmitDur, mpSubmitEdit };`, env.ctx);
   for (const f of env.listeners['doc:DOMContentLoaded'] || []) f();
   return { ...env, t: env.ctx.__t };
 }

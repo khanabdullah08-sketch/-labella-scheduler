@@ -17,6 +17,11 @@ const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 const V2 = CFG.backend === 'v2';
 const TENANT = CFG.tenant;
 
+/* Optional staff-console features, switched per client in tenant.json ("features"). Anything missing = off. */
+const FEATURES = Object.assign({ addons: false, roomAssign: false, adjustSession: false }, CFG.features || {});
+const ADDON_MAX = 100000;                    // same limit as the database (bookings.addon_amt)
+const DUR_MIN = 15, DUR_MAX = 240;           // custom session length limits (adjust_session)
+
 const SLOT_STEP     = RULES.slotStep;
 const BUFFER_MINS   = RULES.bufferMins;      // cleaning gap between sessions
 const LEAD_MINS     = RULES.leadMins;        // minimum notice for same-day bookings
@@ -557,6 +562,7 @@ function dvInitPickers() {
 
     const nm = nowMins();
     document.getElementById('aTime').value = pad2(Math.floor(nm / 60)) + ':' + pad2(nm % 60);
+    document.getElementById('aAddonWrap').classList[FEATURES.addons ? 'remove' : 'add']('hidden');
 
     document.getElementById('aLoc').onchange  = () => { dvFillSrv(); aUpdateEnds(); aTherRefresh(); };
     document.getElementById('aSrv').onchange  = () => { aUpdateEnds(); aTherRefresh(); };
@@ -644,7 +650,8 @@ function dvShowAdd() { document.getElementById('dvAdd').classList.toggle('hidden
    options_write). A blocked update returns ZERO rows (not an error), so mpSave checks for that.
    ============================================================ */
 const MP_MAX_PRICE = 1000000;                 // same limit as the check constraint on service_options.price
-let MP = { canEdit: false, view: 'day', model: null, rows: {} };
+let MP = { canEdit: false, view: 'day', model: null, rows: {}, form: null };
+const MP_DUR_MIN = 5, MP_DUR_MAX = 480, MP_MAX_OPTS = 10;       // same limits as the database functions
 
 const mpIsManager = role => role === 'owner' || role === 'manager';
 const mpPriceOk = raw => /^\d{1,7}$/.test(String(raw).trim()) && Number(raw) >= 1 && Number(raw) <= MP_MAX_PRICE;
@@ -654,8 +661,9 @@ const mpDirtyRows = () => Object.values(MP.rows).filter(mpDirty);
 /** Called after login (role from the staff table) and after logout (role = null). */
 function dvApplyRole(role) {
     MP.canEdit = V2 && mpIsManager(role);
-    MP.model = null; MP.rows = {};
+    MP.model = null; MP.rows = {}; MP.form = null;
     document.getElementById('mpBody').innerHTML = '';
+    mpFormRender();
     document.getElementById('dvTabs').classList[MP.canEdit ? 'remove' : 'add']('hidden');
     mpShow('day');
 }
@@ -679,13 +687,14 @@ function dvTab(which) {
 }
 
 /** Read menus, treatments and durations (including switched-off ones) straight from the tables. */
-async function mpLoad(force) {
+async function mpLoad(force, keepEdits) {
     if (!MP.canEdit) return;
-    if (force && mpDirtyRows().length && !confirm('Reloading discards your unsaved price changes. Continue?')) return;
+    if (force && !keepEdits && mpDirtyRows().length && !confirm('Reloading discards your unsaved price changes. Continue?')) return;
+    const kept = keepEdits ? MP.rows : {};          // after adding a treatment, unsaved price edits stay on screen
     document.getElementById('mpBody').innerHTML = '<div class="p-6 text-sand-800 text-sm">Loading…</div>';
     const [m, s, o] = await Promise.all([
         sb.from('menus').select('id,code,name').order('name'),
-        sb.from('services').select('id,menu_id,code,category,name,sort,active').order('sort').order('code'),
+        sb.from('services').select('id,menu_id,code,category,name,description,sort,active').order('sort').order('code'),
         sb.from('service_options').select('id,service_id,duration_min,price,active,sort').order('sort').order('duration_min')
     ]);
     const failed = m.error || s.error || o.error;
@@ -695,9 +704,12 @@ async function mpLoad(force) {
     }
     MP.model = { menus: m.data || [], services: s.data || [], options: o.data || [] };
     MP.rows = {};
-    for (const op of MP.model.options)
+    for (const op of MP.model.options) {
+        const prev = kept[op.id];
         MP.rows[op.id] = { id: op.id, serviceId: op.service_id, duration: op.duration_min,
-                           orig: { price: op.price, active: !!op.active }, raw: String(op.price), active: !!op.active };
+                           orig: { price: op.price, active: !!op.active },
+                           raw: prev ? prev.raw : String(op.price), active: prev ? prev.active : !!op.active };
+    }
     mpRender();
 }
 function mpRender() {
@@ -713,7 +725,9 @@ function mpRender() {
             return `<div class="py-2.5 border-t border-sand-200 first:border-t-0">
                 <div class="text-xs font-bold text-brand-900">${esc(sv.name)}
                     <span class="font-normal text-sand-800">· ${esc(sv.category)}</span>
-                    ${sv.active ? '' : '<span class="ml-1 px-1.5 py-0.5 bg-rose-100 text-rose-800 rounded text-[10px]">treatment switched off</span>'}</div>
+                    ${sv.active ? '' : '<span class="ml-1 px-1.5 py-0.5 bg-rose-100 text-rose-800 rounded text-[10px]">treatment switched off</span>'}
+                    <button onclick="mpOpenDur('${esc(sv.id)}')" class="ml-2 underline font-semibold text-brand-600">+ duration</button>
+                    <button onclick="mpOpenEdit('${esc(sv.id)}')" class="ml-1 underline font-semibold text-brand-600">edit details</button></div>
                 <div class="mt-1.5 space-y-1.5">${opts.map(op => {
                     const r = MP.rows[op.id];
                     return `<div id="mpRow_${esc(op.id)}" class="flex items-center gap-3 text-xs rounded-lg px-2 py-1 ${mpDirty(r) ? 'bg-amber-50' : ''}">
@@ -727,7 +741,8 @@ function mpRender() {
                 }).join('')}</div></div>`;
         }).join('');
         return `<div class="bg-white border border-sand-200 rounded-xl p-4">
-            <div class="text-sm font-bold text-brand-900">${esc(branches.length ? branches.join(' · ') : menu.name)}</div>
+            <div class="flex items-start justify-between gap-2"><div class="text-sm font-bold text-brand-900">${esc(branches.length ? branches.join(' · ') : menu.name)}</div>
+                <button onclick="mpOpenAdd('${esc(menu.code)}')" class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg text-[11px] font-bold whitespace-nowrap">+ Add ${esc(CFG.labels.serviceSummary.toLowerCase())}</button></div>
             <div class="text-[11px] text-sand-800 mb-1">${esc(menu.name)}</div>${items}</div>`;
     }).join('');
     document.getElementById('mpBody').innerHTML = html || '<div class="p-4 text-sm text-sand-800">No menu found for this site.</div>';
@@ -789,6 +804,177 @@ async function mpSave(btn) {
         ? (results.length - failed.length) + ' saved, ' + failed.length + ' NOT saved:\n' + failed.map(x => nameOf(x.r) + ' — ' + x.why).join('\n')
         : 'Saved. The booking page now shows the new prices.');
 }
+/* ---- 12c. add a treatment / add a duration / edit details (owner / manager) ----
+   Each action is one database function call (manager_add_service, manager_add_option, manager_update_service)
+   that validates everything and writes nothing if anything is wrong. The checks below only save a round trip. */
+const MP_WHY = {
+    forbidden: 'only an owner or manager can change the menu',
+    badname: 'the name must be 2 to 80 characters',
+    badcategory: 'the category must be 2 to 40 characters',
+    baddescription: 'the description is too long (300 characters at most)',
+    invalid_menu: 'that menu was not found',
+    badoptions: 'add between 1 and ' + MP_MAX_OPTS + ' durations, each with minutes and a price',
+    badduration: 'minutes must be a whole number from ' + MP_DUR_MIN + ' to ' + MP_DUR_MAX,
+    badprice: 'the price must be a whole number from 1 to ' + MP_MAX_PRICE.toLocaleString(CFG.locale.numberLocale),
+    dupduration: 'that duration already exists for this treatment (it may be switched off: tick Active instead)',
+    dupname: 'a treatment with that name is already on the menu (it may be switched off)',
+    toolong: 'that is longer than the branch is open',
+    not_found: 'that treatment was not found'
+};
+const mpWhy = code => MP_WHY[code] || ('unexpected result: ' + code);
+const mpIntOk = (raw, lo, hi) => /^\d{1,7}$/.test(String(raw).trim()) && Number(raw) >= lo && Number(raw) <= hi;
+
+function mpOpenAdd(menuCode) {
+    if (!MP.canEdit || !MP.model) return;
+    const menu = MP.model.menus.find(m => m.code === menuCode); if (!menu) return;
+    MP.form = { kind: 'add', menus: [menuCode], category: '', name: '', desc: '', opts: [{ d: '', p: '' }] };
+    mpFormRender();
+}
+function mpOpenDur(serviceId) {
+    if (!MP.canEdit || !MP.model) return;
+    if (!MP.model.services.find(s => s.id === serviceId)) return;
+    MP.form = { kind: 'dur', serviceId, d: '', p: '' };
+    mpFormRender();
+}
+function mpOpenEdit(serviceId) {
+    if (!MP.canEdit || !MP.model) return;
+    const s = MP.model.services.find(x => x.id === serviceId); if (!s) return;
+    MP.form = { kind: 'edit', serviceId, category: s.category, name: s.name, desc: s.description || '', active: !!s.active };
+    mpFormRender();
+}
+function mpFormCancel() { MP.form = null; mpFormRender(); }
+/** Keep what is typed in the form (it is re-rendered when a row is added or removed). */
+function mpFormSet(field, value, idx) {
+    const f = MP.form; if (!f) return;
+    if (field === 'd' || field === 'p') { if (f.kind === 'add') f.opts[idx][field] = value; else f[field] = value; }
+    else if (field === 'active') f.active = !!value;
+    else f[field] = value;
+}
+function mpFormToggleMenu(code, on) {
+    const f = MP.form; if (!f || f.kind !== 'add') return;
+    f.menus = on ? [...new Set([...f.menus, code])] : f.menus.filter(c => c !== code);
+}
+function mpFormRow(add) {
+    const f = MP.form; if (!f || f.kind !== 'add') return;
+    if (add && f.opts.length < MP_MAX_OPTS) f.opts.push({ d: '', p: '' });
+    else if (!add && f.opts.length > 1) f.opts.pop();
+    mpFormRender();
+}
+
+const MP_IN = 'p-2 border border-sand-200 rounded-lg text-xs';
+function mpFormRender() {
+    const box = document.getElementById('mpForm'); const f = MP.form;
+    if (!f || !MP.model) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+    const cur = esc(CFG.locale.currencySymbol);
+    const head = t => `<div class="flex items-center justify-between"><strong class="text-sm text-brand-900">${t}</strong>
+        <button onclick="mpFormCancel()" class="text-xs text-sand-800 underline">Cancel</button></div>`;
+    const foot = (fn, label) => `<button onclick="${fn}(this)" class="w-full py-2.5 bg-emerald-700 text-white font-bold rounded-lg text-xs">${label}</button>`;
+    let html = '';
+    if (f.kind === 'add') {
+        const cats = [...new Set(MP.model.services.map(s => s.category))].sort();
+        const menuBoxes = MP.model.menus.map(m => {
+            const br = LOCATIONS.filter(l => l.menu === m.code).map(l => l.shortName || l.name).join(' / ') || m.name;
+            return `<label class="flex items-center gap-1.5"><input type="checkbox" ${f.menus.includes(m.code) ? 'checked' : ''}
+                onchange="mpFormToggleMenu('${esc(m.code)}', this.checked)"> ${esc(br)}</label>`;
+        }).join('');
+        html = head('Add a new ' + esc(CFG.labels.serviceSummary.toLowerCase())) + `
+            <div class="grid sm:grid-cols-2 gap-2">
+                <input value="${esc(f.name)}" maxlength="80" placeholder="Name" oninput="mpFormSet('name', this.value)" class="${MP_IN}">
+                <input value="${esc(f.category)}" list="mpCats" maxlength="40" placeholder="Category (pick or type a new one)" oninput="mpFormSet('category', this.value)" class="${MP_IN}">
+                <datalist id="mpCats">${cats.map(c => `<option value="${esc(c)}"></option>`).join('')}</datalist>
+            </div>
+            <textarea maxlength="300" rows="2" placeholder="Short description for guests (optional)" oninput="mpFormSet('desc', this.value)" class="${MP_IN} w-full">${esc(f.desc)}</textarea>
+            <div class="text-[11px] text-sand-800">Add to: <span class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-brand-900 mt-1">${menuBoxes}</span></div>
+            <div class="space-y-1.5">${f.opts.map((o, i) => `<div class="flex items-center gap-2 text-xs">
+                <input value="${esc(o.d)}" inputmode="numeric" placeholder="Minutes" oninput="mpFormSet('d', this.value, ${i})" class="w-24 ${MP_IN}"> min
+                <span>${cur}</span><input value="${esc(o.p)}" inputmode="numeric" placeholder="Price" oninput="mpFormSet('p', this.value, ${i})" class="w-28 ${MP_IN}"></div>`).join('')}
+                <div class="flex gap-3 text-xs"><button onclick="mpFormRow(true)" class="underline font-semibold text-brand-600">+ another duration</button>
+                ${f.opts.length > 1 ? '<button onclick="mpFormRow(false)" class="underline text-sand-800">remove last</button>' : ''}</div></div>`
+            + foot('mpSubmitAdd', 'Add to the menu');
+    } else if (f.kind === 'dur') {
+        const s = MP.model.services.find(x => x.id === f.serviceId);
+        html = head('Add a duration to ' + esc(s ? s.name : '')) + `
+            <div class="flex items-center gap-2 text-xs">
+                <input value="${esc(f.d)}" inputmode="numeric" placeholder="Minutes" oninput="mpFormSet('d', this.value)" class="w-24 ${MP_IN}"> min
+                <span>${cur}</span><input value="${esc(f.p)}" inputmode="numeric" placeholder="Price" oninput="mpFormSet('p', this.value)" class="w-28 ${MP_IN}"></div>`
+            + foot('mpSubmitDur', 'Add duration');
+    } else {
+        html = head('Edit details') + `
+            <div class="grid sm:grid-cols-2 gap-2">
+                <input value="${esc(f.name)}" maxlength="80" oninput="mpFormSet('name', this.value)" class="${MP_IN}">
+                <input value="${esc(f.category)}" maxlength="40" oninput="mpFormSet('category', this.value)" class="${MP_IN}"></div>
+            <textarea maxlength="300" rows="2" oninput="mpFormSet('desc', this.value)" class="${MP_IN} w-full">${esc(f.desc)}</textarea>
+            <label class="flex items-center gap-1.5 text-xs"><input type="checkbox" ${f.active ? 'checked' : ''} onchange="mpFormSet('active', this.checked)">
+                Active (untick to hide this ${esc(CFG.labels.serviceSummary.toLowerCase())} from guests and from phone / walk-in booking)</label>`
+            + foot('mpSubmitEdit', 'Save details');
+    }
+    box.innerHTML = html; box.classList.remove('hidden');
+}
+
+/** Shared tail of every form submit: call the database, explain a refusal, refresh the editor and the live menu. */
+async function mpFormCall(btn, label, rpcName, args, done) {
+    btn.disabled = true; btn.innerText = 'Saving…';
+    const { data, error } = await sb.rpc(rpcName, args);
+    btn.disabled = false; btn.innerText = label;
+    if (error) { alert('Could not save: ' + error.message); return; }
+    if (!data || data.status !== 'ok') { alert('Not saved — ' + mpWhy(data && data.status) + '.'); return; }
+    MP.form = null; mpFormRender();
+    await mpLoad(true, true);            // reload the tables; unsaved price edits stay on screen
+    await loadLiveCatalog();             // guests and the walk-in form see it now
+    alert(done(data));
+}
+
+const mpClean = s => String(s || '').replace(/\s+/g, ' ').trim();
+
+async function mpSubmitAdd(btn) {
+    const f = MP.form; if (!MP.canEdit || !f || f.kind !== 'add') return;
+    const name = mpClean(f.name), category = mpClean(f.category), desc = String(f.desc || '').trim();
+    if (name.length < 2 || name.length > 80) { alert('Enter a name (2 to 80 characters).'); return; }
+    if (category.length < 2 || category.length > 40) { alert('Enter a category (2 to 40 characters).'); return; }
+    if (desc.length > 300) { alert('The description is too long (300 characters at most).'); return; }
+    if (!f.menus.length) { alert('Tick at least one menu to add it to.'); return; }
+    const opts = [];
+    for (const o of f.opts) {
+        if (!mpIntOk(o.d, MP_DUR_MIN, MP_DUR_MAX)) { alert('Minutes must be a whole number from ' + MP_DUR_MIN + ' to ' + MP_DUR_MAX + '.'); return; }
+        if (!mpPriceOk(o.p)) { alert('Enter a whole-rupee price between 1 and ' + MP_MAX_PRICE.toLocaleString(CFG.locale.numberLocale) + '.'); return; }
+        opts.push({ duration: Number(o.d), price: Number(o.p) });
+    }
+    if (new Set(opts.map(o => o.duration)).size !== opts.length) { alert('Each duration can only be listed once.'); return; }
+    const where = MP.model.menus.filter(m => f.menus.includes(m.code))
+        .map(m => LOCATIONS.filter(l => l.menu === m.code).map(l => l.shortName || l.name).join('/') || m.name).join(' and ');
+    if (!confirm('Add "' + name + '" (' + category + ') to ' + where + '?\n\n' +
+                 opts.map(o => o.duration + ' min · ' + money(o.price)).join('\n') +
+                 '\n\nGuests can book it straight away.')) return;
+    await mpFormCall(btn, 'Add to the menu', 'manager_add_service',
+        { p_menus: f.menus, p_category: category, p_name: name, p_description: desc, p_options: opts },
+        d => '"' + name + '" was added to ' + d.count + ' menu' + (d.count === 1 ? '' : 's') + '. The booking page shows it now.');
+}
+
+async function mpSubmitDur(btn) {
+    const f = MP.form; if (!MP.canEdit || !f || f.kind !== 'dur') return;
+    if (!mpIntOk(f.d, MP_DUR_MIN, MP_DUR_MAX)) { alert('Minutes must be a whole number from ' + MP_DUR_MIN + ' to ' + MP_DUR_MAX + '.'); return; }
+    if (!mpPriceOk(f.p)) { alert('Enter a whole-rupee price between 1 and ' + MP_MAX_PRICE.toLocaleString(CFG.locale.numberLocale) + '.'); return; }
+    const s = MP.model.services.find(x => x.id === f.serviceId);
+    if (!confirm('Add ' + f.d + ' min · ' + money(Number(f.p)) + ' to "' + (s ? s.name : '') + '"?')) return;
+    await mpFormCall(btn, 'Add duration', 'manager_add_option',
+        { p_service: f.serviceId, p_duration: Number(f.d), p_price: Number(f.p) },
+        () => 'Duration added. The booking page shows it now.');
+}
+
+async function mpSubmitEdit(btn) {
+    const f = MP.form; if (!MP.canEdit || !f || f.kind !== 'edit') return;
+    const name = mpClean(f.name), category = mpClean(f.category), desc = String(f.desc || '').trim();
+    if (name.length < 2 || name.length > 80) { alert('Enter a name (2 to 80 characters).'); return; }
+    if (category.length < 2 || category.length > 40) { alert('Enter a category (2 to 40 characters).'); return; }
+    if (desc.length > 300) { alert('The description is too long (300 characters at most).'); return; }
+    if (!f.active && !confirm('"' + name + '" will be hidden from guests and from phone / walk-in booking. Continue?')) return;
+    await mpFormCall(btn, 'Save details', 'manager_update_service',
+        { p_service: f.serviceId, p_category: category, p_name: name, p_description: desc, p_active: !!f.active },
+        () => 'Saved.');
+}
+
+
+
 
 async function dvLoad() {
     DV.date   = document.getElementById('dvDate').value || ymdLocal(new Date());
@@ -810,7 +996,8 @@ async function dvLoad() {
 
 function dvKpi() {
     const live = DV.rows.filter(b => b.status === 'confirmed');
-    const rev = live.reduce((s, b) => s + (b.price || 0), 0);
+    const addons = live.reduce((s, b) => s + (b.addon_amt || 0), 0);
+    const rev = live.reduce((s, b) => s + (b.price || 0) + (b.addon_amt || 0), 0);
     const isToday = DV.date === ymdLocal(new Date());
     const n = nowMins();
     const busy = live.filter(b => b.start_min <= n && b.end_min > n).length;
@@ -821,7 +1008,7 @@ function dvKpi() {
         <div class="text-[10px] text-sand-800">${c}</div></div>`;
     document.getElementById('dvKpi').innerHTML =
         card('Bookings', live.length, (DV.rows.length - live.length) + ' cancelled / no-show') +
-        card('Revenue', money(rev), 'expected for the day') +
+        card('Revenue', money(rev), addons ? 'incl. ' + money(addons) + ' add-ons' : 'expected for the day') +
         card('Phone / walk-in', live.filter(b => b.source !== 'online').length, 'of ' + live.length + ' total') +
         card('In session now', isToday ? busy + ' / ' + total : '—', isToday ? 'rooms occupied' : 'not today');
 }
@@ -851,18 +1038,31 @@ function dvGrid() {
         }).join('');
     } else {
         const k = capOf(DV.branch);
-        head = Array.from({ length: k }, (_, i) => `<th class="px-2 py-1.5 font-bold text-brand-900">Room ${i + 1}</th>`).join('');
+        /* a booking with no room yet is shown in its own "Unassigned" column (never guessed as Room 1) */
+        const inSession = x => isToday && x.start_min <= n && x.end_min > n;
+        const first = x => esc(String(x.name || '').split(' ')[0]);
+        head = Array.from({ length: k }, (_, i) => {
+            const busy = live.some(x => x.room_no === i + 1 && inSession(x));
+            return `<th class="px-2 py-1.5 font-bold text-brand-900">Room ${i + 1}` +
+                (isToday ? `<div class="text-[10px] font-semibold ${busy ? 'text-rose-700' : 'text-emerald-700'}">${busy ? 'Busy' : 'Free'}</div>` : '') + '</th>';
+        }).join('') + '<th class="px-2 py-1.5 font-bold text-amber-800">Unassigned</th>';
+
         body = times.map(t => {
             const rowCls = isToday && n >= t && n < t + SLOT_STEP ? 'bg-amber-50' : '';
-            return `<tr class="${rowCls}"><td class="px-2 py-1 text-sand-800 whitespace-nowrap border-t border-sand-100">${minsToText(t)}</td>` +
-                Array.from({ length: k }, (_, i) => {
-                    const b = live.find(x => (x.room_no || 1) === i + 1 && x.start_min < t + SLOT_STEP && x.end_min > t);
-                    if (!b) return '<td class="px-2 py-1 border-t border-l border-sand-100 bg-white"></td>';
-                    const first = b.start_min >= t && b.start_min < t + SLOT_STEP;
-                    return `<td class="px-2 py-1 border-t border-l border-sand-100 bg-emerald-100 text-emerald-900">` +
-                            (first ? `<div class="font-bold leading-tight">${minsToText(b.start_min)} ${esc(String(b.name || '').split(' ')[0])}</div>
+            const hit = x => x.start_min < t + SLOT_STEP && x.end_min > t;
+            const starts = x => x.start_min >= t && x.start_min < t + SLOT_STEP;
+            const roomCells = Array.from({ length: k }, (_, i) => {
+                const b = live.find(x => x.room_no === i + 1 && hit(x));
+                if (!b) return '<td class="px-2 py-1 border-t border-l border-sand-100 bg-white"></td>';
+                const cls = inSession(b) ? 'bg-rose-100 text-rose-900' : 'bg-emerald-100 text-emerald-900';
+                return `<td class="px-2 py-1 border-t border-l border-sand-100 ${cls}">` +
+                    (starts(b) ? `<div class="font-bold leading-tight">${minsToText(b.start_min)} ${first(b)}</div>
                                   <div class="leading-tight">${esc(String(b.service_name || '').slice(0, 20))}</div>` : '') + '</td>';
-                }).join('') + '</tr>';
+            }).join('');
+            const un = live.filter(x => !x.room_no && hit(x));
+            const unCell = `<td class="px-2 py-1 border-t border-l border-sand-100 ${un.length ? 'bg-amber-100 text-amber-900 font-semibold' : 'bg-white'}">` +
+                un.filter(starts).map(x => `<div class="leading-tight">${minsToText(x.start_min)} ${first(x)}</div>`).join('') + '</td>';
+            return `<tr class="${rowCls}"><td class="px-2 py-1 text-sand-800 whitespace-nowrap border-t border-sand-100">${minsToText(t)}</td>${roomCells}${unCell}</tr>`;
         }).join('');
     }
 
@@ -887,16 +1087,20 @@ function dvList() {
                 <span class="font-extrabold text-brand-900">${minsToText(b.start_min)}–${minsToText(b.end_min)}</span>
                 <span class="px-2 py-0.5 rounded-full ${tag} font-semibold">${esc(b.status)}</span>
                 <span class="px-2 py-0.5 rounded-full bg-sand-100 text-sand-800">${esc(b.source)}</span>
-                <span class="px-2 py-0.5 rounded-full bg-sand-100 text-sand-800">Room ${b.room_no || 1}</span>
+                <span class="px-2 py-0.5 rounded-full ${b.room_no ? 'bg-sand-100 text-sand-800 font-semibold' : 'bg-amber-100 text-amber-800'}">${b.room_no ? 'Room ' + b.room_no : 'no room'}</span>
                 <span class="px-2 py-0.5 rounded-full ${b.therapist_name ? 'bg-indigo-100 text-indigo-800 font-semibold' : 'bg-amber-100 text-amber-800'}">${b.therapist_name ? esc(b.therapist_name) : 'no therapist'}</span>
                 <span class="ml-auto font-mono text-sand-800">${esc(b.ref || '--')}</span>
             </div>
             <div class="mt-1 text-sm font-bold text-brand-900">${esc(b.name)} · ${esc(b.service_name)}</div>
-            <div class="text-xs text-sand-800">${esc(b.loc_name)} · ${b.duration} mins · ${money(b.price)}${b.notes && b.notes !== 'None' ? ' · ' + esc(b.notes) : ''}</div>
+            <div class="text-xs text-sand-800">${esc(b.loc_name)} · ${b.duration} mins · ${money(b.price)}${b.addon_amt ? ' + ' + money(b.addon_amt) + ' add-on' : ''}${b.notes && b.notes !== 'None' ? ' · ' + esc(b.notes) : ''}</div>
+            ${b.addon_text ? `<div class="text-xs text-indigo-800 font-semibold">Add-on: ${esc(b.addon_text)}${b.addon_amt ? ' · ' + money(b.addon_amt) : ''}</div>` : ''}
+            ${b.orig_duration ? `<div class="text-xs text-amber-800 font-semibold">Changed from ${b.orig_duration} min · ${money(b.orig_price)} · by ${esc(b.adjusted_by || 'staff')} at ${esc(new Date(b.adjusted_at).toLocaleTimeString(CFG.locale.numberLocale, { hour: 'numeric', minute: '2-digit' }))}</div>` : ''}
             <div class="mt-2 flex flex-wrap gap-2 no-print">
                 <a href="tel:${CFG.locale.dialCode}${esc(b.phone)}" class="px-2.5 py-1 bg-brand-100 text-brand-800 rounded-lg text-[11px] font-semibold">Call</a>
                 <a href="https://wa.me/${CFG.locale.countryCode}${esc(b.phone)}" target="_blank" class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg text-[11px] font-semibold">WhatsApp</a>
                 ${dead ? '' : `<button onclick="dvAssign('${b.id}')" class="px-2.5 py-1 bg-indigo-100 text-indigo-800 rounded-lg text-[11px] font-semibold">${b.therapist_name ? 'Change therapist' : 'Assign therapist'}</button>`}
+                ${dead || !FEATURES.roomAssign ? '' : dvRoomSelect(b)}
+                ${dead || !FEATURES.adjustSession ? '' : `<button onclick="dvDurToggle('${b.id}', this)" class="px-2.5 py-1 bg-violet-100 text-violet-800 rounded-lg text-[11px] font-semibold">Change duration</button>`}
                 ${dead ? '' : `<button onclick="dvMark('${b.id}','noshow')" class="px-2.5 py-1 bg-amber-100 text-amber-800 rounded-lg text-[11px] font-semibold">No-show</button>
                 <button onclick="dvMark('${b.id}','cancelled')" class="px-2.5 py-1 bg-rose-100 text-rose-800 rounded-lg text-[11px] font-semibold">Cancel</button>`}
             </div></div>`;
@@ -917,7 +1121,8 @@ function staffBookingReason(code) {
         invalid:   'that branch, treatment or duration is not on the menu',
         badname:   'the guest name is too short',
         badphone:  'the phone number is not valid',
-        closed:    'that time is outside the branch opening hours'
+        closed:    'that time is outside the branch opening hours',
+        badaddon:  'the add-on needs a description and an amount between 0 and ' + ADDON_MAX.toLocaleString(CFG.locale.numberLocale)
     })[code] || ('unexpected result: ' + code);
 }
 async function dvAddBooking(btn) {
@@ -935,46 +1140,52 @@ async function dvAddBooking(btn) {
     const notes = document.getElementById('aNotes').value.trim() || 'None';
     const therId= document.getElementById('aTher').value || null;
     const ther  = (TH.cands || []).find(c => c.id === therId);
+    const addonText = FEATURES.addons ? document.getElementById('aAddon').value.trim() : '';
+    const addonAmt  = FEATURES.addons ? Math.round(Number(document.getElementById('aAddonAmt').value) || 0) : 0;
 
     if (name.length < 2) { alert('Enter the guest name.'); return; }
     if (!PHONE_RE.test(phone)) { alert(CFG.locale.phoneErrorStaff); return; }
     if (start === null) { alert('Enter a start time.'); return; }
     if (start < openOf(locId)) { alert('We open at ' + minsToText(openOf(locId)) + '. Pick a later start.'); return; }
     if (start + duration > closeOf(locId)) { alert('That session would run past ' + minsToText(closeOf(locId)) + '.'); return; }
+    if (addonAmt < 0 || addonAmt > ADDON_MAX) { alert('Add-on amount must be between 0 and ' + ADDON_MAX.toLocaleString(CFG.locale.numberLocale) + '.'); return; }
+    if (addonAmt > 0 && !addonText) { alert('Describe the add-on, or clear the amount.'); return; }
 
     btn.disabled = true; btn.innerText = 'Saving…';
     let ref = CFG.brand.refPrefix + Math.floor(100000 + Math.random() * 900000);
-    let newId = null, hardError = null;
+    let newId = null, hardError = null, full = false;
 
+    /* Staff bookings start WITHOUT a room: pick one afterwards with the room selector. The database refuses
+       to overbook the branch. v2: the database picks the reference and takes the price from the menu. */
     if (V2) {
-        /* the database picks the room, checks hours + cleaning gap, takes the price from the menu */
         const { data, error } = await sb.rpc('staff_create_booking', {
             p_branch: locId, p_service: srv.id, p_duration: duration, p_date: date, p_start: start,
-            p_name: name, p_phone: phone, p_notes: notes, p_source: source
+            p_name: name, p_phone: phone, p_notes: notes, p_source: source,
+            p_addon_text: addonText || null, p_addon_amt: addonAmt
         });
         if (error) hardError = error.message;
         else if (data.status === 'ok') { newId = data.id; ref = data.ref; }
-        else if (data.status !== 'full') hardError = staffBookingReason(data.status);
+        else if (data.status === 'full') full = true;
+        else hardError = staffBookingReason(data.status);
     } else {
         const who = (await sb.auth.getUser()).data.user?.email || 'staff';
-        for (let room = 1; room <= capOf(locId); room++) {
-            const { data, error } = await sb.from('bookings').insert({
-                kind: 'booking', status: 'confirmed', ref: ref,
-                loc_id: locId, loc_name: loc.name,
-                service_id: srv.id, service_name: srv.name + ' (' + duration + ' Mins)',
-                duration: duration, price: price,
-                date: date, start_min: start, end_min: start + duration, room_no: room,
-                name: name, phone: phone, notes: notes, source: source,
-                created_by: who
-            }).select('id').single();
-            if (!error) { newId = data.id; break; }
-            if (error.code !== '23P01') { hardError = error.message; break; }
-        }
+        const ins = await sb.from('bookings').insert({
+            kind: 'booking', status: 'confirmed', ref: ref,
+            loc_id: locId, loc_name: loc.name,
+            service_id: srv.id, service_name: srv.name + ' (' + duration + ' Mins)',
+            duration: duration, price: price,
+            date: date, start_min: start, end_min: start + duration,
+            name: name, phone: phone, notes: notes, source: source,
+            addon_text: addonText || null, addon_amt: addonAmt,
+            created_by: who
+        }).select('id').single();
+        if (ins.error) { if (String(ins.error.message).includes('CENTRE_FULL')) full = true; else hardError = ins.error.message; }
+        else newId = ins.data.id;
     }
 
     btn.disabled = false; btn.innerText = 'Save booking';
     if (hardError) { alert('Could not save: ' + hardError); return; }
-    if (!newId)    { alert('All rooms are busy at that time. Pick another slot.'); return; }
+    if (full || !newId) { alert('The ' + CFG.labels.branchWord + ' is fully booked at that time. Pick another slot.'); return; }
 
     let msg = 'Booked. Ref ' + ref;
     if (therId) {
@@ -988,15 +1199,20 @@ async function dvAddBooking(btn) {
     document.getElementById('aName').value = '';
     document.getElementById('aPhone').value = '';
     document.getElementById('aNotes').value = '';
+    document.getElementById('aAddon').value = '';
+    document.getElementById('aAddonAmt').value = '';
     document.getElementById('dvDate').value = date;
     dvLoad();
 }
 
 function dvCsv() {
-    const cols = ['ref','date','start','end','loc_name','service_name','duration','price','room_no','therapist_name','name','phone','status','source','created_by','notes'];
+    const cols = ['ref','date','start','end','loc_name','service_name','duration','price',
+                  ...(FEATURES.addons ? ['addon_text','addon_amt','total'] : []),
+                  'room_no','therapist_name','name','phone','status','source','created_by','notes'];
     const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
     const body = DV.rows.map(r => cols.map(c =>
-        q(c === 'start' ? minsToText(r.start_min) : c === 'end' ? minsToText(r.end_min) : r[c])).join(',')).join('\n');
+        q(c === 'start' ? minsToText(r.start_min) : c === 'end' ? minsToText(r.end_min)
+          : c === 'total' ? (r.price || 0) + (r.addon_amt || 0) : r[c])).join(',')).join('\n');
     const link = document.createElement('a');
     link.href = URL.createObjectURL(new Blob([cols.join(',') + '\n' + body], { type: 'text/csv;charset=utf-8;' }));
     link.download = CFG.brand.csvFilePrefix + DV.branch + '_' + DV.date + '.csv';
@@ -1290,3 +1506,96 @@ async function dvAssign(id) {
     if (data !== 'ok') { alert('Not assigned — ' + thReason(data) + '.'); return; }
     dvLoad();
 }
+
+/* ============================================================
+   14. ROOMS + CHANGE DURATION  (staff console; switched on per client with features.roomAssign / adjustSession)
+   ============================================================ */
+/** Room picker for one booking. Rooms already in use by another confirmed booking in that time are greyed out. */
+function dvRoomSelect(b) {
+    const k = capOf(b.loc_id);
+    const opts = Array.from({ length: k }, (_, i) => {
+        const r = i + 1;
+        const clash = DV.rows.find(x => x.id !== b.id && x.loc_id === b.loc_id && x.status === 'confirmed'
+            && x.room_no === r && x.start_min < b.end_min && x.end_min > b.start_min);
+        return `<option value="${r}"${b.room_no === r ? ' selected' : ''}${clash ? ' disabled' : ''}>Room ${r}${clash ? ' (busy ' + minsToText(clash.start_min) + '–' + minsToText(clash.end_min) + ')' : ''}</option>`;
+    }).join('');
+    return `<select onchange="dvAssignRoom('${b.id}', this.value)" class="px-2 py-1 border border-sand-200 rounded-lg text-[11px] font-semibold ${b.room_no ? 'bg-sand-100' : 'bg-amber-100'}">
+        <option value=""${b.room_no ? '' : ' selected'}>${b.room_no ? 'Unassign room' : 'Assign room…'}</option>${opts}</select>`;
+}
+
+async function dvAssignRoom(id, val) {
+    const room = val === '' ? null : Number(val);
+    const { data, error } = await sb.rpc('assign_room', { p_booking_id: id, p_room: room });
+    if (error) alert('Could not assign: ' + error.message);
+    else if (data === 'busy') alert('That room is already in use during this session.');
+    else if (data !== 'ok') alert('Not assigned: ' + data);
+    dvLoad();
+}
+
+/** Only an owner / manager may type their own minutes or amount. Front desk picks standard menu options.
+ *  (The database enforces the same rule, so hiding the fields is a convenience, not the protection.) */
+const dvCanCustom = () => !V2 || MP.canEdit;
+
+function dvDurToggle(id, btn) {
+    const b = DV.rows.find(r => r.id === id); if (!b) return;
+    const row  = btn.parentElement;
+    const card = row.parentElement;
+    const open = card.querySelector(':scope > .dur-panel');
+    if (open) { const same = open.dataset.id === id; open.remove(); if (same) return; }
+
+    const srv = menuFor(b.loc_id).find(s => s.id === b.service_id);
+    const chips = (srv ? srv.options : []).map(o =>
+        `<button type="button" onclick="dvDurPick('${id}', ${o.duration}, ${o.price})" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white border border-violet-300 text-violet-800">${o.duration} min · ${money(o.price)}</button>`
+    ).join('');
+    const custom = dvCanCustom();
+    row.insertAdjacentHTML('afterend',
+        `<div class="dur-panel mt-2 p-2.5 bg-sand-50 border border-sand-200 rounded-lg space-y-2" data-id="${id}">
+            <div class="text-[11px] text-sand-800">Now: <strong>${b.duration} min · ${money(b.price)}</strong>. ${custom ? 'Tap a menu option, or type your own minutes and amount.' : 'Tap a menu option below. Only an owner or manager can type a custom time or amount.'}</div>
+            <div class="flex flex-wrap gap-1.5">${chips || '<span class="text-[11px] text-sand-800">This treatment is not on the current menu.</span>'}</div>
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+                <input id="dd-${id}" type="number" min="${DUR_MIN}" max="${DUR_MAX}" step="5" value="${b.duration}" ${custom ? '' : 'readonly'} class="w-20 p-2 border border-sand-200 rounded-lg ${custom ? '' : 'bg-sand-100'}"> min
+                <input id="dp-${id}" type="number" min="0" max="100000" step="1" value="${b.price}" ${custom ? '' : 'readonly'} class="w-28 p-2 border border-sand-200 rounded-lg ${custom ? '' : 'bg-sand-100'}"> ${esc(CFG.locale.currencySymbol)}
+                <button onclick="dvDurSave('${id}')" class="px-3 py-1.5 bg-violet-700 text-white rounded-lg font-bold">Save change</button>
+            </div>
+        </div>`);
+}
+
+function dvDurPick(id, dur, price) {
+    document.getElementById('dd-' + id).value = dur;
+    document.getElementById('dp-' + id).value = price;
+}
+
+
+async function dvDurSave(id) {
+    const b = DV.rows.find(r => r.id === id); if (!b) return;
+    const dur   = Math.round(Number(document.getElementById('dd-' + id).value));
+    const price = Math.round(Number(document.getElementById('dp-' + id).value));
+    if (!dur || dur < DUR_MIN || dur > DUR_MAX) { alert('Enter a duration between ' + DUR_MIN + ' and ' + DUR_MAX + ' minutes.'); return; }
+    if (isNaN(price) || price < 0)              { alert('Enter a valid amount.'); return; }
+
+    if (!confirm('CHANGE SESSION — ' + b.name + '\n\n' +
+                 'From: ' + b.duration + ' min · ' + money(b.price) + '  (ends ' + minsToText(b.end_min) + ')\n' +
+                 'To:   ' + dur + ' min · ' + money(price) + '  (ends ' + minsToText(b.start_min + dur) + ')\n\n' +
+                 'Revenue changes by ' + money(price - b.price) + '. OK to save?')) return;
+
+    const { data, error } = await sb.rpc('adjust_session', { p_booking_id: id, p_duration: dur, p_price: price });
+    if (error) { alert('Could not save: ' + error.message); return; }
+
+    const msg = {
+        ok: null,
+        no_change: 'Nothing changed.',
+        past_close: 'That would run past closing time (' + minsToText(closeOf(b.loc_id)) + ').',
+        therapist_busy: 'The therapist has another booking in that extra time. Use Change therapist first, then extend.',
+        room_busy: 'This room is booked by another guest in that extra time. Pick another room with the room selector first, then extend.',
+        centre_full: 'The ' + CFG.labels.branchWord + ' is fully booked during the extra time.',
+        busy: 'The therapist or room is busy in that extra time.',
+        not_confirmed: 'Only confirmed bookings can be changed.',
+        not_allowed: 'Only an owner or manager can set a custom time or amount. Pick a menu option instead.',
+        bad_input: 'Check the minutes and amount.',
+        no_booking: 'That booking no longer exists, or is not yours to change.'
+    }[data];
+    if (msg) alert(msg);
+    else if (data !== 'ok') alert('Unexpected result: ' + data);
+    dvLoad();
+}
+

@@ -70,7 +70,8 @@ cross join (values
 ) as v(code, category, name, description, sort)
 where t.slug = 'labella' and m.code = 'def'
 on conflict (menu_id, code) do update set category = excluded.category, name = excluded.name,
-  description = excluded.description, sort = excluded.sort;
+  description = excluded.description, sort = excluded.sort
+  where not public.services.edited_in_ui;   -- a treatment edited in the Menu & Prices tab is never overwritten by a seed
 
 -- ===== PART 7: durations and prices of menu def =====
 insert into public.service_options (tenant_id, service_id, duration_min, price, sort)
@@ -140,7 +141,8 @@ cross join (values
 ) as v(code, category, name, description, sort)
 where t.slug = 'labella' and m.code = 'cp'
 on conflict (menu_id, code) do update set category = excluded.category, name = excluded.name,
-  description = excluded.description, sort = excluded.sort;
+  description = excluded.description, sort = excluded.sort
+  where not public.services.edited_in_ui;   -- a treatment edited in the Menu & Prices tab is never overwritten by a seed
 
 -- ===== PART 9: durations and prices of menu cp =====
 insert into public.service_options (tenant_id, service_id, duration_min, price, sort)

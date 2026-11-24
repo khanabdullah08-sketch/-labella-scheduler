@@ -3,7 +3,10 @@
   "status": "live",
   "backend": "legacy",
   "lang": "en",
+  "timezone": "Asia/Kolkata",
   "defaultMenu": "standard",
+
+  "features": { "addons": true, "roomAssign": true, "adjustSession": true },
 
   "brand": {
     "name": "Thalasso Luxe",

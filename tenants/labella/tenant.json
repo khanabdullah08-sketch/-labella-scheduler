@@ -6,6 +6,8 @@
   "timezone": "Asia/Kolkata",
   "defaultMenu": "def",
 
+  "features": { "addons": true, "roomAssign": true, "adjustSession": true },
+
   "brand": {
     "name": "La Bella Luxè Wellness",
     "tagline": "Wellness & Spa",

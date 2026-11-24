@@ -1,4 +1,8 @@
 {
+  "menuNames": {
+    "standard": "Vasant Vihar, Defence Colony & Greater Kailash Menu",
+    "mg": "MG Road Sultanpur Menu"
+  },
   "branches": [
     {
       "id": "vv",
@@ -75,7 +79,7 @@
         "id": "s3",
         "cat": "Therapeutic",
         "name": "Hot Stone Realm",
-        "desc": "Warm basalt stones massaged into key body points easing stiffness.",
+        "desc": "Warm basalt stones massaged on key body points easing stiffness.",
         "options": [
           {
             "duration": 60,
@@ -341,7 +345,7 @@
         "id": "m4",
         "cat": "Therapeutic",
         "name": "Hot Stone Realm",
-        "desc": "Warm basalt stones massaged into key body points, easing stiffness and enhancing circulation.",
+        "desc": "Warm basalt stones massaged on key body points, easing stiffness and enhancing circulation.",
         "options": [
           {
             "duration": 60,

@@ -46,6 +46,9 @@ function readJson(file) {
   catch (e) { throw new Error(`Cannot read ${path.relative(ROOT, file)}: ${e.message}`); }
 }
 
+/* staff-console switches a client may turn on in tenant.json -> "features" (all default to off) */
+const FEATURE_KEYS = ['addons', 'roomAssign', 'adjustSession'];
+
 /* ---------- validation: fail the build loudly instead of shipping a broken site ---------- */
 function validate(t, catalog) {
   const errs = [];
@@ -69,6 +72,11 @@ function validate(t, catalog) {
   for (const p of ['brand', 'sand']) need(t.colors && t.colors[p], `colors.${p} palette is required`);
 
   need([undefined, 'legacy', 'v2'].includes(t.backend), 'backend must be "legacy" (original Thalasso database) or "v2" (shared multi-tenant database)');
+  if (t.features !== undefined) {
+    need(t.features && typeof t.features === 'object' && !Array.isArray(t.features), 'features must be an object such as { "addons": true }');
+    for (const [k, v] of Object.entries(t.features || {}))
+      need(FEATURE_KEYS.includes(k) && typeof v === 'boolean', `features.${k}: unknown switch or not true/false (known: ${FEATURE_KEYS.join(', ')})`);
+  }
   if (t.backend === 'v2') {
     need(/^[A-Z0-9]{1,5}-$/.test(get(t, 'brand.refPrefix') || ''), 'brand.refPrefix must look like "LB-" for the v2 database');
     need(t.timezone, 'timezone is required for the v2 database (e.g. Asia/Kolkata)');
@@ -127,6 +135,12 @@ export function build({ tenant, outDir = path.join(ROOT, 'dist'), quiet = false 
 
   const t = readJson(path.join(tdir, 'tenant.json'));
   const catalog = readJson(path.join(tdir, 'catalog.json'));
+  /* BACKEND=v2 (Netlify env var) switches a tenant to the shared database at cut-over time without a code change.
+     Only "v2" is accepted as an override, so a stray value can never silently downgrade a client. */
+  if (process.env.BACKEND !== undefined && process.env.BACKEND !== '') {
+    if (process.env.BACKEND !== 'v2') throw new Error(`BACKEND must be "v2" (or unset), got "${process.env.BACKEND}"`);
+    t.backend = 'v2';
+  }
   t.supabase = t.supabase || {};
   const supaUrl = process.env.SUPABASE_URL || t.supabase.url;
   const supaKey = process.env.SUPABASE_ANON_KEY || t.supabase.anonKey;
@@ -171,6 +185,7 @@ export function build({ tenant, outDir = path.join(ROOT, 'dist'), quiet = false 
   /* runtime config consumed by src/app.js */
   const appConfig = {
     tenant, backend, defaultMenu: t.defaultMenu,
+    features: Object.fromEntries(FEATURE_KEYS.map(k => [k, !!(t.features && t.features[k])])),
     brand: t.brand, labels: t.labels, locale: t.locale, rules: t.rules,
     supabase: { url: supaUrl, anonKey: supaKey },
     branches: catalog.branches, menus: catalog.menus

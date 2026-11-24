@@ -4,7 +4,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { makeDb, ROOT } from './harness.mjs';
 
-const seedSql = fs.readFileSync(path.join(ROOT, 'supabase', 'seed', 'labella.sql'), 'utf8');
+const seedOf = slug => fs.readFileSync(path.join(ROOT, 'supabase', 'seed', slug + '.sql'), 'utf8');
+const seedSql = seedOf('labella') + '\n' + seedOf('thalasso');     // both clients' seeds go through the same checks
 
 /** Tables the seed is allowed to touch. A mistyped table name fails this test before it fails in Supabase. */
 const KNOWN_TABLES = new Set(['tenants', 'menus', 'branches', 'services', 'service_options']);
@@ -30,12 +31,32 @@ test('no quoted text in the seed reads like a SQL statement ("into muscles", "fr
   assert.deepEqual(risky, [], 'reword these treatment/branch texts');
 });
 
-test('migrations then seed apply cleanly on an empty database, and the seed can be run again', async () => {
+test('migrations then the LaBella seed apply cleanly on an empty database, and the seed can be run again', async () => {
   const db = await makeDb();                             // applies every migration in order
-  await db.exec(seedSql);
-  await db.exec(seedSql);                                // upserts: no duplicates, no errors
+  await db.exec(seedOf('labella'));
+  await db.exec(seedOf('labella'));                      // upserts: no duplicates, no errors
   const n = async t => (await db.query(`select count(*)::int n from public.${t}`)).rows[0].n;
   assert.deepEqual(
     { tenants: await n('tenants'), menus: await n('menus'), branches: await n('branches'), services: await n('services'), options: await n('service_options') },
     { tenants: 1, menus: 2, branches: 2, services: 34, options: 63 });
+});
+
+test('both clients live in ONE shared database: the Thalasso seed adds to LaBella without touching it', async () => {
+  const db = await makeDb();
+  await db.exec(seedOf('labella'));
+  await db.exec(seedOf('thalasso'));
+  await db.exec(seedOf('thalasso'));                     // re-running is harmless
+  const one = async sql => (await db.query(sql)).rows[0];
+  assert.deepEqual(await one(`select count(*)::int n from tenants`), { n: 2 });
+  assert.deepEqual(await one(`select t.ref_prefix, t.timezone, count(distinct b.id)::int branches, count(distinct m.id)::int menus
+    from tenants t join branches b on b.tenant_id = t.id join menus m on m.tenant_id = t.id where t.slug = 'thalasso' group by 1, 2`),
+    { ref_prefix: 'TL-', timezone: 'Asia/Kolkata', branches: 4, menus: 2 });
+  const counts = slug => one(`select count(distinct s.id)::int services, count(o.id)::int options from services s
+    join service_options o on o.service_id = s.id join tenants t on t.id = s.tenant_id where t.slug = '${slug}'`);
+  assert.deepEqual(await counts('labella'), { services: 34, options: 63 });
+  assert.deepEqual(await counts('thalasso'), { services: 36, options: 62 });
+  // the legacy branch codes are kept, and 'def' exists for both clients without clashing
+  const codes = (await db.query(`select b.code, b.rooms from branches b join tenants t on t.id = b.tenant_id where t.slug = 'thalasso' order by b.sort`)).rows;
+  assert.deepEqual(codes.map(r => r.code + ':' + r.rooms), ['vv:6', 'def:6', 'gk:6', 'mg:10']);
+  assert.equal((await one(`select count(*)::int n from branches where code = 'def'`)).n, 2);
 });
