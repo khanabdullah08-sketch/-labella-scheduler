@@ -1833,21 +1833,39 @@ async function dvBillingSave(id, btn) {
 /* ============================================================
    17. EXPENSES  (expenses table)
    ============================================================ */
-let EXP = { rows: [], canEdit: false };
+let EXP = { rows: [], canEdit: false, uuidCache: {} };
 
 function expApplyRole(role) { EXP.canEdit = role === 'owner' || role === 'manager'; }
 function expToggleAdd() { document.getElementById('expAddForm').classList.toggle('hidden'); }
 
+/**
+ * On the v2 backend the expenses.branch_id column is a UUID FK to branches(id).
+ * The dvBranch <select> holds the branch *code* (e.g. "vv", "def", "cp") from the
+ * catalog — not a UUID.  This helper resolves code → UUID with one DB call, cached
+ * for the rest of the session so subsequent loads are instant.
+ * On the legacy backend the select value is used as-is (expenses table doesn't exist there).
+ */
+async function expResolveBranchUuid(code) {
+    if (!V2) return code;                              // legacy: no UUID needed
+    if (EXP.uuidCache[code]) return EXP.uuidCache[code];
+    const { data, error } = await sb.from('branches').select('id').eq('code', code).limit(1);
+    if (error || !data || !data.length) return null;
+    EXP.uuidCache[code] = data[0].id;
+    return data[0].id;
+}
+
 async function expLoad() {
-    const branchId = document.getElementById('dvBranch').value;
-    const date     = document.getElementById('dvDate').value || ymdLocal(new Date());
-    const listEl   = document.getElementById('expList');
-    const sumEl    = document.getElementById('expSummary');
+    const branchCode = document.getElementById('dvBranch').value;
+    const date       = document.getElementById('dvDate').value || ymdLocal(new Date());
+    const listEl     = document.getElementById('expList');
+    const sumEl      = document.getElementById('expSummary');
     if (!listEl || !sumEl) return;
-    if (branchId === 'all') {
+    if (branchCode === 'all') {
         listEl.innerHTML = '<div class="text-sand-800 py-2">Select a single branch to view expenses.</div>';
         sumEl.innerHTML = ''; EXP.rows = []; return;
     }
+    const branchId = await expResolveBranchUuid(branchCode);
+    if (!branchId) { listEl.innerHTML = '<div class="text-rose-700">Could not resolve branch ID.</div>'; return; }
     const { data, error } = await sb.from('expenses').select('*')
         .eq('branch_id', branchId).eq('expense_date', date).order('created_at', { ascending: true });
     if (error) { listEl.innerHTML = '<div class="text-rose-700">Could not load expenses: ' + esc(error.message) + '</div>'; return; }
@@ -1884,16 +1902,18 @@ function expRender() {
 }
 
 async function expSave(btn) {
-    const branchId = document.getElementById('dvBranch').value;
-    const date     = document.getElementById('dvDate').value || ymdLocal(new Date());
-    const desc     = document.getElementById('expDesc').value.trim();
-    const amt      = Math.round(Number(document.getElementById('expAmt').value) || 0);
-    const mode     = document.getElementById('expMode').value;
-    if (branchId === 'all') { alert('Select a specific branch before logging an expense.'); return; }
+    const branchCode = document.getElementById('dvBranch').value;
+    const date       = document.getElementById('dvDate').value || ymdLocal(new Date());
+    const desc       = document.getElementById('expDesc').value.trim();
+    const amt        = Math.round(Number(document.getElementById('expAmt').value) || 0);
+    const mode       = document.getElementById('expMode').value;
+    if (branchCode === 'all') { alert('Select a specific branch before logging an expense.'); return; }
     if (!desc)             { alert('Enter a description.'); return; }
     if (desc.length > 160) { alert('Description must be 160 characters or less.'); return; }
     if (amt < 1)           { alert('Enter a valid amount (' + CFG.locale.currencySymbol + '1 or more).'); return; }
     btn.disabled = true; btn.innerText = 'Saving…';
+    const branchId = await expResolveBranchUuid(branchCode);
+    if (!branchId) { btn.disabled = false; btn.innerText = 'Save Expense'; alert('Could not resolve branch ID. Please try again.'); return; }
     const { error } = await sb.from('expenses').insert({ branch_id: branchId, expense_date: date, description: desc, amount: amt, payment_mode: mode });
     btn.disabled = false; btn.innerText = 'Save Expense';
     if (error) { alert('Could not save: ' + error.message); return; }
