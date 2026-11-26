@@ -215,7 +215,10 @@
                         <span id="aEnds" class="text-[11px] text-sand-800 whitespace-nowrap">ends --</span>
                     </div>
                     <input id="aName" placeholder="Guest name" class="p-2.5 border border-sand-200 rounded-lg">
-                    <input id="aPhone" placeholder="10-digit mobile" inputmode="numeric" class="p-2.5 border border-sand-200 rounded-lg">
+                    <div class="flex gap-2">
+                        <input id="aPhone" placeholder="10-digit mobile or NA" inputmode="numeric" class="p-2.5 border border-sand-200 rounded-lg flex-1">
+                        <input id="aClientCode" maxlength="4" placeholder="4-dig ID" inputmode="numeric" class="p-2.5 border border-sand-200 rounded-lg w-24" title="4-digit client code (auto-fills from phone last 4 digits)">
+                    </div>
                     <select id="aSource" class="p-2.5 border border-sand-200 rounded-lg">
                         <option value="phone">Phone booking</option>
                         <option value="walkin">Walk-in</option>
@@ -229,12 +232,17 @@
                         <select id="aTher2" class="w-full p-2.5 border border-sand-200 rounded-lg"></select>
                         <div id="aTher2Note" class="text-[11px] text-sand-800 mt-1">&nbsp;</div>
                     </div>
-                    <select id="aPayMethod" class="p-2.5 border border-sand-200 rounded-lg">
-                        <option value="pending">Payment: Pending</option>
-                        <option value="cash">Payment: Cash</option>
-                        <option value="upi">Payment: UPI</option>
-                        <option value="card">Payment: Card</option>
-                    </select>
+                    <div class="space-y-1">
+                        <select id="aPayMethod" class="w-full p-2.5 border border-sand-200 rounded-lg">
+                            <option value="pending">Payment: Pending</option>
+                            <option value="cash">Payment: Cash</option>
+                            <option value="upi">Payment: UPI</option>
+                            <option value="upi2">Payment: UPI 2</option>
+                            <option value="card">Payment: Card</option>
+                            <option value="membership">Payment: Membership / GC</option>
+                        </select>
+                        <div id="aGstPreview" class="hidden text-[11px] text-emerald-800 font-semibold px-1"></div>
+                    </div>
                     <div id="aAddonWrap" class="grid grid-cols-5 gap-2 self-start">
                         <input id="aAddon" maxlength="80" placeholder="Add-on (e.g. head massage)" class="col-span-3 p-2.5 border border-sand-200 rounded-lg">
                         <input id="aAddonAmt" type="number" min="0" max="100000" step="1" inputmode="numeric" placeholder="Amt {{locale.currencySymbol}}" class="col-span-2 p-2.5 border border-sand-200 rounded-lg">
@@ -243,6 +251,24 @@
                         <input id="aDiscText" maxlength="80" placeholder="Discount reason (optional)" class="col-span-3 p-2.5 border border-sand-200 rounded-lg">
                         <input id="aDiscAmt" type="number" min="0" max="100000" step="1" inputmode="numeric" placeholder="Disc {{locale.currencySymbol}}" class="col-span-2 p-2.5 border border-sand-200 rounded-lg">
                     </div>
+                    <label class="flex items-center gap-2 text-xs sm:col-span-2">
+                        <input type="checkbox" id="aTherapistRequested"> ☑ Client requested this therapist
+                    </label>
+                </div>
+                <!-- Membership / GC redemption row (shown when membership payment selected) -->
+                <div id="aMembershipRow" class="hidden border border-indigo-200 bg-indigo-50 rounded-lg p-3 space-y-2 text-xs">
+                    <div class="font-semibold text-indigo-900">Membership / Gift Certificate</div>
+                    <input id="aMembershipCode" placeholder="Enter M-N or GC-N code" class="w-full p-2 border border-sand-200 rounded-lg">
+                    <button type="button" onclick="aLookupMembership(this)" class="px-3 py-1.5 bg-indigo-700 text-white rounded-lg font-bold">Look up</button>
+                    <div id="aMembershipResult" class="text-[11px] text-indigo-800"></div>
+                </div>
+                <!-- Client History Card (shown when 4-digit code is entered) -->
+                <div id="aClientCard" class="hidden border border-brand-200 bg-brand-50 rounded-xl p-3 space-y-2 text-xs sm:col-span-2">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-brand-900">Client History &amp; Preferences</span>
+                        <button type="button" onclick="aClientCardClose()" class="text-sand-800 underline text-[11px]">Close</button>
+                    </div>
+                    <div id="aClientCardBody" class="space-y-2"></div>
                 </div>
                 <button onclick="dvAddBooking(this)" class="w-full py-2.5 bg-emerald-700 text-white font-bold rounded-lg text-xs">Save booking</button>
             </div>
@@ -272,6 +298,41 @@
             </div>
             <div id="dvList" class="space-y-2"></div>
 
+            <!-- MEMBERSHIPS & CERTIFICATES SECTION -->
+            <div class="bg-white border border-sand-200 rounded-xl p-4 space-y-3">
+                <div class="flex items-center justify-between">
+                    <strong class="text-sm text-brand-900">Memberships &amp; Gift Certificates</strong>
+                    <button onclick="mbrToggleAdd()" class="px-3 py-1.5 bg-indigo-100 text-indigo-800 rounded-lg text-xs font-semibold">+ New Package</button>
+                </div>
+                <div id="mbrAddForm" class="hidden border border-indigo-200 rounded-xl p-3 space-y-2 bg-indigo-50">
+                    <div class="grid sm:grid-cols-2 gap-2 text-xs">
+                        <select id="mbrKind" class="p-2.5 border border-sand-200 rounded-lg bg-white">
+                            <option value="membership">Membership (M-N)</option>
+                            <option value="gift_certificate">Gift Certificate (GC-N)</option>
+                        </select>
+                        <input id="mbrCode" placeholder="Code (blank = auto M-1 / GC-1)" class="p-2.5 border border-sand-200 rounded-lg bg-white">
+                        <input id="mbrHolder" placeholder="Holder name *" class="p-2.5 border border-sand-200 rounded-lg bg-white">
+                        <div class="flex gap-2">
+                            <input id="mbrPhone" placeholder="Phone (or NA)" class="p-2.5 border border-sand-200 rounded-lg bg-white flex-1">
+                            <input id="mbrClientCode" maxlength="4" placeholder="4-dig ID" inputmode="numeric" class="p-2.5 border border-sand-200 rounded-lg bg-white w-20">
+                        </div>
+                        <input id="mbrSessions" type="number" min="1" step="1" inputmode="numeric" placeholder="Total sessions *" class="p-2.5 border border-sand-200 rounded-lg bg-white">
+                        <input id="mbrAmt" type="number" min="0" step="1" inputmode="numeric" placeholder="Amount paid {{locale.currencySymbol}} (0 = migration)" class="p-2.5 border border-sand-200 rounded-lg bg-white">
+                        <select id="mbrPayMode" class="p-2.5 border border-sand-200 rounded-lg bg-white">
+                            <option value="cash">Cash</option>
+                            <option value="upi">UPI</option>
+                            <option value="upi2">UPI 2</option>
+                            <option value="card">Card</option>
+                            <option value="legacy">Legacy (migration)</option>
+                        </select>
+                        <input id="mbrExpires" type="date" placeholder="Expires on (optional)" class="p-2.5 border border-sand-200 rounded-lg bg-white">
+                        <input id="mbrNotes" placeholder="Notes (optional)" class="sm:col-span-2 p-2.5 border border-sand-200 rounded-lg bg-white">
+                    </div>
+                    <button onclick="mbrSave(this)" class="w-full py-2 bg-indigo-700 text-white font-bold rounded-lg text-xs">Save Package</button>
+                </div>
+                <div id="mbrList" class="space-y-1.5 text-xs text-sand-800">Look up a client by phone or 4-digit code to see their memberships here.</div>
+            </div>
+
             <!-- EXPENSES SECTION -->
             <div class="bg-white border border-sand-200 rounded-xl p-4 space-y-3">
                 <div class="flex items-center justify-between">
@@ -285,6 +346,7 @@
                         <select id="expMode" class="p-2.5 border border-sand-200 rounded-lg bg-white">
                             <option value="cash">Cash</option>
                             <option value="upi">UPI</option>
+                            <option value="upi2">UPI 2</option>
                             <option value="card">Card</option>
                         </select>
                         <button onclick="expSave(this)" class="sm:col-span-2 py-2 bg-rose-700 text-white font-bold rounded-lg text-xs">Save Expense</button>

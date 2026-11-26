@@ -28,6 +28,7 @@ const LEAD_MINS     = RULES.leadMins;        // minimum notice for same-day book
 const HOLD_MINS     = RULES.holdMinutes;     // must match the hold length enforced in the database
 const BOOKING_DAYS  = RULES.bookingDays;     // how many days ahead guests can book
 const TH_MAX        = RULES.therapistMax;    // therapists per branch per day
+const GST_PCT       = Number(RULES.digitalGstPercent) || 0;  // 5 for LaBella, 0 for Thalasso
 
 /* ============================================================
    2. BRANCHES  (id, name, shortName, city, phone, address, rooms, menu,
@@ -564,11 +565,14 @@ function dvInitPickers() {
     document.getElementById('aTime').value = pad2(Math.floor(nm / 60)) + ':' + pad2(nm % 60);
     document.getElementById('aAddonWrap').classList[FEATURES.addons ? 'remove' : 'add']('hidden');
 
-    document.getElementById('aLoc').onchange  = () => { dvFillSrv(); aUpdateEnds(); aTherRefresh(); aTher2Refresh(); };
-    document.getElementById('aSrv').onchange  = () => { aUpdateEnds(); aTherRefresh(); aTher2Refresh(); };
+    document.getElementById('aLoc').onchange  = () => { dvFillSrv(); aUpdateEnds(); aTherRefresh(); aTher2Refresh(); aGstRefresh(); };
+    document.getElementById('aSrv').onchange  = () => { aUpdateEnds(); aTherRefresh(); aTher2Refresh(); aGstRefresh(); };
     document.getElementById('aTime').oninput  = () => { aUpdateEnds(); aTherRefresh(); aTher2Refresh(); };
     document.getElementById('aDate').onchange = () => { aTherRefresh(); aTher2Refresh(); };
     document.getElementById('aTher').onchange = aTher2Refresh;
+    document.getElementById('aPayMethod').onchange = () => { aGstRefresh(); aMembershipRowToggle(); };
+    document.getElementById('aPhone').oninput  = aPhoneAutoCode;
+    document.getElementById('aClientCode').oninput = aClientCodeTrigger;
     aUpdateEnds();
 
     document.getElementById('dvDate').onchange   = dvLoad;
@@ -1002,13 +1006,18 @@ function dvKpi() {
     const discounts= live.reduce((s, b) => s + (b.discount_amt || 0), 0);
     const gross    = live.reduce((s, b) => s + (b.price || 0) + (b.addon_amt || 0), 0);
     const netRev   = gross - discounts;
+    const gstTotal = live.reduce((s, b) => s + (b.gst_amt || 0), 0);
+    const grandTotal = netRev + gstTotal;
     const isToday  = DV.date === ymdLocal(new Date());
     const n        = nowMins();
-    const busy     = live.filter(b => b.start_min <= n && b.end_min > n).length;
+    const busy     = live.filter(b => {
+        const effEnd = b.actual_end_min || b.end_min;
+        return b.start_min <= n && effEnd > n;
+    }).length;
     const total    = DV.branch === 'all' ? LOCATIONS.reduce((s, l) => s + capOf(l.id), 0) : capOf(DV.branch);
-    const pmBreak  = ['cash','upi','card','pending'].map(pm => {
+    const pmBreak  = ['cash','upi','upi2','card','membership','pending'].map(pm => {
         const c = live.filter(b => b.payment_method === pm).length;
-        return c ? pm.charAt(0).toUpperCase() + pm.slice(1) + ' ' + c : '';
+        return c ? (pm === 'upi2' ? 'UPI2' : pm.charAt(0).toUpperCase() + pm.slice(1)) + ' ' + c : '';
     }).filter(Boolean).join(' · ') || 'All pending';
     const card = (a, b, c) => `<div class="bg-white border border-sand-200 rounded-xl p-3">
         <div class="text-[10px] uppercase tracking-wide text-sand-800">${a}</div>
@@ -1019,6 +1028,7 @@ function dvKpi() {
         card('Net Revenue', money(netRev), addons ? 'incl. ' + money(addons) + ' add-ons' : 'expected for the day') +
         card('Discounts', discounts ? '-' + money(discounts) : '—', discounts ? 'applied today' : 'none today') +
         card('Payment Modes', pmBreak.split(' · ')[0] || '—', pmBreak) +
+        (GST_PCT > 0 ? card('GST + Grand Total', money(grandTotal), '+' + money(gstTotal) + ' GST (' + GST_PCT + '%)') : '') +
         card('In session now', isToday ? busy + ' / ' + total : '—', isToday ? 'rooms occupied' : 'not today');
 }
 
@@ -1092,13 +1102,20 @@ function dvList() {
                   : b.status === 'noshow'    ? 'bg-amber-100 text-amber-800'
                                              : 'bg-emerald-100 text-emerald-800';
         const pmCls = { cash: 'bg-teal-100 text-teal-800', upi: 'bg-cyan-100 text-cyan-800',
-                        card: 'bg-sky-100 text-sky-800', pending: 'bg-sand-100 text-sand-800' };
+                        upi2: 'bg-cyan-200 text-cyan-900', card: 'bg-sky-100 text-sky-800',
+                        membership: 'bg-indigo-100 text-indigo-800', pending: 'bg-sand-100 text-sand-800' };
         const pm = b.payment_method || 'pending';
         const netTotal = (b.price || 0) + (b.addon_amt || 0) - (b.discount_amt || 0);
+        const gstAmt   = b.gst_amt || 0;
+        const grandTotal = netTotal + gstAmt;
+        const endedEarly = b.ended_early_at && b.actual_end_min;
+        const effEnd = endedEarly ? b.actual_end_min : b.end_min;
         return `<div class="bg-white border border-sand-200 rounded-xl p-3 ${dead ? 'opacity-55' : ''}">
             <div class="flex flex-wrap items-center gap-2 text-xs">
-                <span class="font-extrabold text-brand-900">${minsToText(b.start_min)}–${minsToText(b.end_min)}</span>
+                <span class="font-extrabold text-brand-900">${minsToText(b.start_min)}–${minsToText(effEnd)}${endedEarly ? ' <span class="text-rose-600 font-normal text-[10px]">(ended early)</span>' : ''}</span>
                 <span class="px-2 py-0.5 rounded-full ${tag} font-semibold">${esc(b.status)}</span>
+                ${endedEarly ? `<span class="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 font-semibold text-[10px]">Ended early at ${minsToText(b.actual_end_min)}</span>` : ''}
+                ${b.therapist_requested ? '<span class="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 font-semibold text-[10px]">Requested therapist</span>' : ''}
                 <span class="px-2 py-0.5 rounded-full bg-sand-100 text-sand-800">${esc(b.source)}</span>
                 <span class="px-2 py-0.5 rounded-full ${b.room_no ? 'bg-sand-100 text-sand-800 font-semibold' : 'bg-amber-100 text-amber-800'}">${b.room_no ? 'Room ' + b.room_no : 'no room'}</span>
                 <span class="px-2 py-0.5 rounded-full ${b.therapist_name ? 'bg-indigo-100 text-indigo-800 font-semibold' : 'bg-amber-100 text-amber-800'}">${b.therapist_name ? esc(b.therapist_name) : 'no therapist'}</span>
@@ -1106,7 +1123,7 @@ function dvList() {
                 <span class="ml-auto font-mono text-sand-800">${esc(b.ref || '--')}</span>
             </div>
             <div class="mt-1 text-sm font-bold text-brand-900">${esc(b.name)} · ${esc(b.service_name)}</div>
-            <div class="text-xs text-sand-800">${esc(b.loc_name)} · ${b.duration} mins · ${money(b.price)}${b.addon_amt ? ' + ' + money(b.addon_amt) + ' add-on' : ''}${b.discount_amt ? ' − ' + money(b.discount_amt) + ' disc' : ''} = <strong>${money(netTotal)}</strong>${b.notes && b.notes !== 'None' ? ' · ' + esc(b.notes) : ''}</div>
+            <div class="text-xs text-sand-800">${esc(b.loc_name)} · ${b.duration} mins · ${money(b.price)}${b.addon_amt ? ' + ' + money(b.addon_amt) + ' add-on' : ''}${b.discount_amt ? ' − ' + money(b.discount_amt) + ' disc' : ''} = <strong>${money(netTotal)}</strong>${gstAmt > 0 ? ` + GST ${money(gstAmt)} = <strong class="text-emerald-800">${money(grandTotal)}</strong>` : ''}${b.notes && b.notes !== 'None' ? ' · ' + esc(b.notes) : ''}</div>
             ${b.addon_text ? `<div class="text-xs text-indigo-800 font-semibold">Add-on: ${esc(b.addon_text)}${b.addon_amt ? ' · ' + money(b.addon_amt) : ''}</div>` : ''}
             ${b.discount_text ? `<div class="text-xs text-rose-700 font-semibold">Discount: ${esc(b.discount_text)} · -${money(b.discount_amt)}</div>` : ''}
             ${b.therapist_id_2 ? `<div class="text-xs text-purple-800 font-semibold">2nd Therapist ID: ${esc(b.therapist_id_2)}</div>` : ''}
@@ -1121,8 +1138,8 @@ function dvList() {
                 ${dead || !FEATURES.adjustSession ? '' : `<button onclick="dvDurToggle('${b.id}', this)" class="px-2.5 py-1 bg-violet-100 text-violet-800 rounded-lg text-[11px] font-semibold">Change duration</button>`}
                 ${dead ? '' : `<button onclick="dvRescheduleToggle('${b.id}', this)" class="px-2.5 py-1 bg-orange-100 text-orange-800 rounded-lg text-[11px] font-semibold">Change Therapy / Time</button>`}
                 ${dead ? '' : `<button onclick="dvBillingToggle('${b.id}', this)" class="px-2.5 py-1 bg-teal-100 text-teal-800 rounded-lg text-[11px] font-semibold">Billing / Payment</button>`}
-                ${dead ? '' : `<button onclick="dvMark('${b.id}','noshow')" class="px-2.5 py-1 bg-amber-100 text-amber-800 rounded-lg text-[11px] font-semibold">No-show</button>
-                <button onclick="dvMark('${b.id}','cancelled')" class="px-2.5 py-1 bg-rose-100 text-rose-800 rounded-lg text-[11px] font-semibold">Cancel</button>`}
+                ${dead ? '' : `<button onclick="dvMark('${b.id}','noshow')" class="px-2.5 py-1 bg-amber-100 text-amber-800 rounded-lg text-[11px] font-semibold">No-show</button>`}
+                ${dead || endedEarly ? '' : `<button onclick="dvEndTherapy('${b.id}')" class="px-2.5 py-1 bg-rose-100 text-rose-800 rounded-lg text-[11px] font-semibold">End Therapy</button>`}
             </div></div>`;
     }).join('');
 }
@@ -1159,7 +1176,10 @@ async function dvAddBooking(btn) {
     const date  = document.getElementById('aDate').value;
     const start = textToMins(document.getElementById('aTime').value);
     const name  = document.getElementById('aName').value.trim();
-    const phone = cleanPhone(document.getElementById('aPhone').value);
+    const rawPhone = document.getElementById('aPhone').value.trim();
+    const phone = rawPhone.toUpperCase() === 'NA' ? 'NA' : cleanPhone(rawPhone);
+    const clientCode = document.getElementById('aClientCode').value.trim() || null;
+    const therapistRequested = document.getElementById('aTherapistRequested').checked;
     const source= document.getElementById('aSource').value;
     const notes = document.getElementById('aNotes').value.trim() || 'None';
     const therId  = document.getElementById('aTher').value || null;
@@ -1170,9 +1190,14 @@ async function dvAddBooking(btn) {
     const addonAmt  = FEATURES.addons ? Math.round(Number(document.getElementById('aAddonAmt').value) || 0) : 0;
     const discText  = document.getElementById('aDiscText').value.trim();
     const discAmt   = Math.round(Number(document.getElementById('aDiscAmt').value) || 0);
+    // Membership ID from the hidden field populated by the lookup
+    const membershipId = document.getElementById('aMembershipId') ? document.getElementById('aMembershipId').value || null : null;
 
     if (name.length < 2) { alert('Enter the guest name.'); return; }
-    if (!PHONE_RE.test(phone)) { alert(CFG.locale.phoneErrorStaff); return; }
+    // Allow NA as phone (only if 4-digit client code is set)
+    if (phone === 'NA') {
+        if (!clientCode || !/^\d{4}$/.test(clientCode)) { alert('Enter a 4-digit Client ID when phone is NA.'); return; }
+    } else if (!PHONE_RE.test(phone)) { alert(CFG.locale.phoneErrorStaff); return; }
     if (start === null) { alert('Enter a start time.'); return; }
     if (start < openOf(locId)) { alert('We open at ' + minsToText(openOf(locId)) + '. Pick a later start.'); return; }
     if (start + duration > closeOf(locId)) { alert('That session would run past ' + minsToText(closeOf(locId)) + '.'); return; }
@@ -1194,7 +1219,10 @@ async function dvAddBooking(btn) {
             p_addon_text: addonText || null, p_addon_amt: addonAmt,
             p_payment_method: payMethod,
             p_discount_text: discText || null, p_discount_amt: discAmt,
-            p_therapist_id_2: ther2Id || null
+            p_therapist_id_2: ther2Id || null,
+            p_therapist_requested: therapistRequested,
+            p_membership_id: membershipId || null,
+            p_client_code: clientCode || null
         });
         if (error) hardError = error.message;
         else if (data.status === 'ok') { newId = data.id; ref = data.ref; }
@@ -1222,7 +1250,10 @@ async function dvAddBooking(btn) {
 
     let msg = 'Booked. Ref ' + ref;
     if (therId) {
-        const { data, error } = await sb.rpc('assign_therapist', { p_booking_id: newId, p_therapist_id: therId });
+        const { data, error } = await sb.rpc('assign_therapist', {
+            p_booking_id: newId, p_therapist_id: therId, p_slot: 'primary',
+            p_therapist_requested: therapistRequested
+        });
         if (error)          msg += '\n\n⚠️ Saved, but therapist not assigned: ' + error.message;
         else if (data === 'ok') msg += '\nTherapist: ' + (ther ? ther.name : '');
         else                msg += '\n\n⚠️ Saved WITHOUT a therapist — ' + thReason(data) + '\nAssign someone else from the list below.';
@@ -1231,12 +1262,18 @@ async function dvAddBooking(btn) {
 
     document.getElementById('aName').value     = '';
     document.getElementById('aPhone').value    = '';
+    document.getElementById('aClientCode').value = '';
+    document.getElementById('aTherapistRequested').checked = false;
     document.getElementById('aNotes').value    = '';
     document.getElementById('aAddon').value    = '';
     document.getElementById('aAddonAmt').value = '';
     document.getElementById('aDiscText').value = '';
     document.getElementById('aDiscAmt').value  = '';
     document.getElementById('aPayMethod').value= 'pending';
+    document.getElementById('aMembershipRow').classList.add('hidden');
+    document.getElementById('aGstPreview').classList.add('hidden');
+    document.getElementById('aClientCard').classList.add('hidden');
+    if (document.getElementById('aMembershipId')) document.getElementById('aMembershipId').value = '';
     document.getElementById('dvDate').value    = date;
     dvLoad();
 }
@@ -1244,14 +1281,21 @@ async function dvAddBooking(btn) {
 function dvCsv() {
     const cols = ['ref','date','start','end','loc_name','service_name','duration','price',
                   'addon_text','addon_amt','discount_text','discount_amt','payment_method','net_total',
-                  'room_no','therapist_name','therapist_2','name','phone','status','source','created_by','notes'];
+                  'gst_amt','grand_total','client_code',
+                  'room_no','therapist_name','therapist_2','therapist_requested','name','phone','status','source','created_by','notes'];
     const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
-    const body = DV.rows.map(r => cols.map(c =>
-        q(c === 'start'      ? minsToText(r.start_min)
-        : c === 'end'        ? minsToText(r.end_min)
-        : c === 'net_total'  ? (r.price || 0) + (r.addon_amt || 0) - (r.discount_amt || 0)
-        : c === 'therapist_2'? (r.therapist_id_2 || '')
-        : r[c])).join(',')).join('\n');
+    const body = DV.rows.map(r => {
+        const nt = (r.price || 0) + (r.addon_amt || 0) - (r.discount_amt || 0);
+        const gt = nt + (r.gst_amt || 0);
+        return cols.map(c =>
+            q(c === 'start'       ? minsToText(r.start_min)
+            : c === 'end'         ? minsToText(r.actual_end_min || r.end_min)
+            : c === 'net_total'   ? nt
+            : c === 'gst_amt'     ? (r.gst_amt || 0)
+            : c === 'grand_total' ? gt
+            : c === 'therapist_2' ? (r.therapist_id_2 || '')
+            : r[c])).join(',');
+    }).join('\n');
     const link = document.createElement('a');
     link.href = URL.createObjectURL(new Blob([cols.join(',') + '\n' + body], { type: 'text/csv;charset=utf-8;' }));
     link.download = CFG.brand.csvFilePrefix + DV.branch + '_' + DV.date + '.csv';
@@ -1777,20 +1821,31 @@ function dvBillingToggle(id, btn) {
     const open = card.querySelector(':scope > .billing-panel');
     if (open) { const same = open.dataset.id === id; open.remove(); if (same) return; }
 
-    const pmOpts = ['pending','cash','upi','card'].map(pm =>
-        `<option value="${pm}"${(b.payment_method || 'pending') === pm ? ' selected' : ''}>${pm.charAt(0).toUpperCase() + pm.slice(1)}</option>`
+    const pmLabels = { pending: 'Pending', cash: 'Cash', upi: 'UPI', upi2: 'UPI 2', card: 'Card', membership: 'Membership / GC' };
+    const pmOpts = ['pending','cash','upi','upi2','card','membership'].map(pm =>
+        `<option value="${pm}"${(b.payment_method || 'pending') === pm ? ' selected' : ''}>${pmLabels[pm] || pm}</option>`
     ).join('');
 
+    const curMid = b.membership_id || '';
     row.insertAdjacentHTML('afterend',
         `<div class="billing-panel mt-2 p-2.5 bg-teal-50 border border-teal-200 rounded-lg space-y-2" data-id="${id}">
             <div class="text-[11px] text-sand-800 font-semibold">Billing / Payment — ${esc(b.name)}</div>
             <div class="grid sm:grid-cols-2 gap-2 text-xs">
-                <select id="bl-pm-${id}" class="p-2 border border-sand-200 rounded-lg">${pmOpts}</select>
-                <div></div>
+                <select id="bl-pm-${id}" onchange="blMembershipRowToggle('${id}')" class="p-2 border border-sand-200 rounded-lg">${pmOpts}</select>
+                <div id="bl-gst-${id}" class="text-[11px] text-emerald-800 font-semibold self-center px-1"></div>
                 <input id="bl-addon-${id}" maxlength="80" value="${esc(b.addon_text || '')}" placeholder="Add-on description" class="p-2 border border-sand-200 rounded-lg">
                 <input id="bl-addonamt-${id}" type="number" min="0" max="100000" step="1" inputmode="numeric" value="${b.addon_amt || 0}" placeholder="Add-on ${esc(CFG.locale.currencySymbol)}" class="p-2 border border-sand-200 rounded-lg">
                 <input id="bl-disc-${id}" maxlength="80" value="${esc(b.discount_text || '')}" placeholder="Discount reason" class="p-2 border border-sand-200 rounded-lg">
                 <input id="bl-discamt-${id}" type="number" min="0" max="100000" step="1" inputmode="numeric" value="${b.discount_amt || 0}" placeholder="Discount ${esc(CFG.locale.currencySymbol)}" class="p-2 border border-sand-200 rounded-lg">
+            </div>
+            <div id="bl-mrow-${id}" class="${b.payment_method === 'membership' ? '' : 'hidden'} border border-indigo-200 bg-indigo-50 rounded-lg p-2 space-y-1 text-xs">
+                <div class="font-semibold text-indigo-900">Membership / Gift Certificate</div>
+                <div class="flex gap-2">
+                    <input id="bl-mcode-${id}" value="${esc(b.membership_id ? '(linked: ' + b.membership_id.slice(0,8) + '…)' : '')}" placeholder="Enter M-N or GC-N code" class="flex-1 p-2 border border-sand-200 rounded-lg bg-white">
+                    <button type="button" onclick="blLookupMembership('${id}')" class="px-3 py-1.5 bg-indigo-700 text-white rounded-lg font-bold text-xs">Look up</button>
+                </div>
+                <input type="hidden" id="bl-mid-${id}" value="${esc(curMid)}">
+                <div id="bl-mresult-${id}" class="text-[11px] text-indigo-800"></div>
             </div>
             <button onclick="dvBillingSave('${id}', this)" class="w-full py-2 bg-teal-700 text-white rounded-lg font-bold text-xs">Save Billing</button>
         </div>`);
@@ -1803,11 +1858,14 @@ async function dvBillingSave(id, btn) {
     const addonAmt = Math.round(Number(document.getElementById('bl-addonamt-' + id).value) || 0);
     const discTxt  = document.getElementById('bl-disc-' + id).value.trim();
     const discAmt  = Math.round(Number(document.getElementById('bl-discamt-' + id).value) || 0);
+    const midEl    = document.getElementById('bl-mid-' + id);
+    const membershipId = midEl ? (midEl.value || null) : null;
 
     if (addonAmt > 0 && !addonTxt) { alert('Describe the add-on, or set amount to 0.'); return; }
     if (addonTxt.length > 80)      { alert('Add-on description max 80 characters.'); return; }
     if (discTxt.length > 80)       { alert('Discount reason max 80 characters.'); return; }
     if (discAmt < 0)               { alert('Discount amount cannot be negative.'); return; }
+    if (pm === 'membership' && !membershipId) { alert('Look up and select a Membership or Gift Certificate first.'); return; }
 
     btn.disabled = true; btn.innerText = 'Saving…';
     const { data, error } = await sb.rpc('update_booking_billing', {
@@ -1816,7 +1874,8 @@ async function dvBillingSave(id, btn) {
         p_addon_text:     addonTxt || null,
         p_addon_amt:      addonAmt,
         p_discount_text:  discTxt || null,
-        p_discount_amt:   discAmt
+        p_discount_amt:   discAmt,
+        p_membership_id:  membershipId || null
     });
     btn.disabled = false; btn.innerText = 'Save Billing';
     if (error) { alert('Could not save: ' + error.message); return; }
@@ -1824,6 +1883,10 @@ async function dvBillingSave(id, btn) {
         badaddon: 'Add-on needs a description and a valid amount.',
         baddiscount: 'Discount exceeds the booking total, or reason is too long.',
         invalid: 'Invalid payment method.',
+        membership_required: 'Select a membership or gift certificate.',
+        membership_not_found: 'That membership was not found.',
+        membership_inactive: 'That membership is no longer active.',
+        membership_exhausted: 'No sessions remaining on that membership.',
         no_booking: 'Booking not found or not yours to change.' }[data];
     if (blMsg) alert(blMsg);
     else if (data !== 'ok') alert('Unexpected result: ' + data);
@@ -1948,4 +2011,278 @@ async function expDelete(id) {
 }
 
 
+
+
+/* ============================================================
+   18. END THERAPY  (end_therapy RPC — frees room/therapist, keeps revenue)
+   ============================================================ */
+async function dvEndTherapy(id) {
+    const b = DV.rows.find(r => r.id === id); if (!b) return;
+    if (!confirm('End therapy early for ' + b.name + ' at ' + minsToText(b.start_min) + '?\n\nRevenue stays in today\'s totals. The room and therapist are freed immediately.')) return;
+    const { data, error } = await sb.rpc('end_therapy', { p_booking_id: id });
+    if (error) { alert('Could not end therapy: ' + error.message); return; }
+    const msg = { not_found: 'Booking not found.', forbidden: 'No permission.',
+                  not_confirmed: 'Only confirmed bookings can be ended.',
+                  already_ended: 'Therapy already ended for this booking.' }[data];
+    if (msg) { alert(msg); return; }
+    dvLoad();
+}
+
+/* ============================================================
+   19. GST PREVIEW in walk-in booking form
+   ============================================================ */
+function aGstRefresh() {
+    const el = document.getElementById('aGstPreview');
+    if (!el || GST_PCT <= 0) return;
+    const pm = document.getElementById('aPayMethod').value;
+    if (!['card','upi','upi2'].includes(pm)) { el.classList.add('hidden'); el.innerText = ''; return; }
+    const [, , priceStr] = (document.getElementById('aSrv').value || '').split('|');
+    const price  = Number(priceStr) || 0;
+    const addonAmt = FEATURES.addons ? Math.round(Number(document.getElementById('aAddonAmt').value) || 0) : 0;
+    const discAmt  = Math.round(Number(document.getElementById('aDiscAmt').value) || 0);
+    const net = Math.max(0, price + addonAmt - discAmt);
+    const gst = Math.round(net * GST_PCT / 100);
+    if (!net) { el.classList.add('hidden'); return; }
+    el.innerText = '+' + GST_PCT + '% GST ' + money(gst) + ' → Grand Total ' + money(net + gst);
+    el.classList.remove('hidden');
+}
+
+/* ============================================================
+   20. MEMBERSHIP ROW TOGGLE in walk-in form
+   ============================================================ */
+function aMembershipRowToggle() {
+    const pm  = document.getElementById('aPayMethod').value;
+    const row = document.getElementById('aMembershipRow');
+    if (!row) return;
+    if (pm === 'membership') row.classList.remove('hidden');
+    else row.classList.add('hidden');
+}
+
+
+/* ============================================================
+   21. NA PHONE AUTO-CODE + 4-DIGIT CLIENT CODE TRIGGER
+   ============================================================ */
+function aPhoneAutoCode() {
+    const raw    = document.getElementById('aPhone').value.trim();
+    const codeEl = document.getElementById('aClientCode');
+    if (/^\d{10}$/.test(raw)) {
+        const last4 = raw.slice(-4);
+        if (!codeEl.value || codeEl.value === codeEl.dataset.auto) {
+            codeEl.value = last4;
+            codeEl.dataset.auto = last4;
+            aClientCodeTrigger();
+        }
+    }
+}
+
+let _clientCodeTimer = null;
+function aClientCodeTrigger() {
+    clearTimeout(_clientCodeTimer);
+    const code = document.getElementById('aClientCode').value.trim();
+    if (!/^\d{4}$/.test(code)) return;
+    _clientCodeTimer = setTimeout(() => aLookupClientByCode(code), 600);
+}
+
+async function aLookupClientByCode(code) {
+    const card    = document.getElementById('aClientCard');
+    const body    = document.getElementById('aClientCardBody');
+    const mbrList = document.getElementById('mbrList');
+    if (!card || !body) return;
+    body.innerHTML = '<div class="text-sand-800">Looking up…</div>';
+    card.classList.remove('hidden');
+
+    const { data, error } = await sb.rpc('lookup_client_by_code', { p_code: code });
+    if (error || !data || data.status !== 'ok') {
+        body.innerHTML = '<div class="text-rose-700">Could not look up: ' + esc(error ? error.message : (data && data.status) || 'unknown') + '</div>';
+        return;
+    }
+
+    const profiles = data.profiles || [];
+    const mbrs     = data.memberships || [];
+
+    let html = `<div class="font-semibold text-brand-900">Code: ${esc(code)} · ${data.visit_count} visit(s)${data.last_visit_date ? ' · Last: ' + esc(data.last_visit_date) + (data.last_treatment ? ' — ' + esc(data.last_treatment) : '') : ''}</div>`;
+
+    if (profiles.length) {
+        html += '<div class="mt-1 font-semibold text-brand-800">Known guests:</div>';
+        html += profiles.map(p => `<div class="pl-2 border-l-2 border-brand-300">
+            <span class="font-semibold">${esc(p.client_name || '—')}</span>${p.phone ? ' · ' + esc(p.phone) : ''}
+            ${p.preferences ? `<div class="text-sand-800 italic">${esc(p.preferences)}</div>` : ''}
+        </div>`).join('');
+    } else {
+        html += '<div class="text-sand-800 italic">No profile on file for this code.</div>';
+    }
+
+    if (mbrs.length) {
+        html += '<div class="mt-2 font-semibold text-brand-800">Active Memberships / GC:</div>';
+        html += mbrs.map(m => {
+            const cls = m.kind === 'membership' ? 'bg-indigo-50 border-indigo-200' : 'bg-emerald-50 border-emerald-200';
+            return `<div class="border ${cls} rounded-lg p-2 flex items-center justify-between gap-2">
+                <div><span class="font-bold text-brand-900">${esc(m.code)}</span>
+                <span class="text-sand-800 ml-1">${esc(m.holder_name)} · ${m.remaining_sessions}/${m.total_sessions} sessions${m.expires_on ? ' · exp ' + esc(m.expires_on) : ''}</span></div>
+                <button type="button" onclick="aSelectMembership('${esc(m.id)}','${esc(m.code)}')" class="px-2 py-1 bg-indigo-700 text-white rounded font-bold text-[10px]">Use</button>
+            </div>`;
+        }).join('');
+    }
+    body.innerHTML = html;
+
+    if (mbrList) {
+        mbrList.innerHTML = mbrs.length
+            ? mbrs.map(m => `<div class="flex flex-wrap items-center justify-between gap-2 py-1 border-b border-sand-100 last:border-0">
+                <span class="font-bold">${esc(m.code)}</span>
+                <span class="text-sand-800">${esc(m.holder_name)} · ${m.remaining_sessions}/${m.total_sessions} sessions · ${esc(m.branch_name)}</span>
+                ${m.expires_on ? `<span class="text-sand-800">exp ${esc(m.expires_on)}</span>` : ''}
+              </div>`).join('')
+            : '<div class="text-sand-800">No active memberships for this code.</div>';
+    }
+}
+
+function aClientCardClose() { document.getElementById('aClientCard').classList.add('hidden'); }
+
+function aSelectMembership(id, code) {
+    let hiddenEl = document.getElementById('aMembershipId');
+    if (!hiddenEl) {
+        hiddenEl = document.createElement('input');
+        hiddenEl.type = 'hidden'; hiddenEl.id = 'aMembershipId';
+        document.getElementById('dvAdd').appendChild(hiddenEl);
+    }
+    hiddenEl.value = id;
+    document.getElementById('aPayMethod').value = 'membership';
+    document.getElementById('aMembershipRow').classList.remove('hidden');
+    document.getElementById('aMembershipCode').value = code;
+    document.getElementById('aMembershipResult').innerText = '✓ Selected: ' + code;
+    aGstRefresh();
+}
+
+
+/* ============================================================
+   22. MEMBERSHIP LOOKUP in walk-in form (by code like M-3)
+   ============================================================ */
+async function aLookupMembership(btn) {
+    const code    = document.getElementById('aMembershipCode').value.trim();
+    const resEl   = document.getElementById('aMembershipResult');
+    const locId   = document.getElementById('aLoc').value;
+    if (!code) { resEl.innerText = 'Enter a code (e.g. M-3 or GC-1).'; return; }
+
+    btn.disabled = true; btn.innerText = '…';
+    const branchId = await expResolveBranchUuid(locId);
+    if (!branchId) { resEl.innerText = 'Could not resolve branch.'; btn.disabled = false; btn.innerText = 'Look up'; return; }
+
+    const { data, error } = await sb.from('memberships')
+        .select('id,code,kind,holder_name,remaining_sessions,total_sessions,expires_on,active')
+        .eq('code', code).eq('branch_id', branchId).limit(1);
+
+    btn.disabled = false; btn.innerText = 'Look up';
+    if (error || !data || !data.length) { resEl.innerText = 'No membership found with code "' + code + '" at this branch.'; return; }
+    const m = data[0];
+    if (!m.active)                 { resEl.innerText = '⚠️ ' + m.code + ' is inactive.'; return; }
+    if (m.remaining_sessions <= 0) { resEl.innerText = '⚠️ ' + m.code + ' has no sessions remaining.'; return; }
+    if (m.expires_on && m.expires_on < ymdLocal(new Date())) { resEl.innerText = '⚠️ ' + m.code + ' expired on ' + m.expires_on + '.'; return; }
+
+    aSelectMembership(m.id, m.code);
+    resEl.innerText = '✓ ' + m.code + ' — ' + m.holder_name + ' · ' + m.remaining_sessions + '/' + m.total_sessions + ' sessions' + (m.expires_on ? ' · exp ' + m.expires_on : '');
+}
+
+/* ============================================================
+   23. BILLING PANEL membership row toggle + lookup
+   ============================================================ */
+function blMembershipRowToggle(id) {
+    const pm  = document.getElementById('bl-pm-' + id).value;
+    const row = document.getElementById('bl-mrow-' + id);
+    if (!row) return;
+    if (pm === 'membership') row.classList.remove('hidden');
+    else row.classList.add('hidden');
+}
+
+async function blLookupMembership(id) {
+    const code  = document.getElementById('bl-mcode-' + id).value.trim();
+    const resEl = document.getElementById('bl-mresult-' + id);
+    const midEl = document.getElementById('bl-mid-' + id);
+    const b     = DV.rows.find(r => r.id === id);
+    if (!code || !b) { resEl.innerText = 'Enter a code (e.g. M-3 or GC-1).'; return; }
+
+    const branchId = await expResolveBranchUuid(b.loc_id);
+    if (!branchId) { resEl.innerText = 'Could not resolve branch.'; return; }
+
+    const { data, error } = await sb.from('memberships')
+        .select('id,code,kind,holder_name,remaining_sessions,total_sessions,expires_on,active')
+        .eq('code', code).eq('branch_id', branchId).limit(1);
+
+    if (error || !data || !data.length) { resEl.innerText = 'No membership found with that code at this branch.'; return; }
+    const m = data[0];
+    if (!m.active) { resEl.innerText = '⚠️ ' + m.code + ' is inactive.'; return; }
+    if (m.remaining_sessions <= 0 && b.membership_id !== m.id) {
+        resEl.innerText = '⚠️ ' + m.code + ' has no sessions remaining.'; return;
+    }
+    midEl.value = m.id;
+    resEl.innerText = '✓ ' + m.code + ' — ' + m.holder_name + ' · ' + m.remaining_sessions + '/' + m.total_sessions + ' sessions';
+}
+
+
+/* ============================================================
+   24. MEMBERSHIPS PANEL  (create_membership RPC)
+   ============================================================ */
+function mbrToggleAdd() {
+    document.getElementById('mbrAddForm').classList.toggle('hidden');
+}
+
+async function mbrSave(btn) {
+    const branchCode = document.getElementById('dvBranch').value;
+    if (branchCode === 'all') { alert('Select a specific branch before creating a membership.'); return; }
+
+    const kind     = document.getElementById('mbrKind').value;
+    const code     = document.getElementById('mbrCode').value.trim() || null;
+    const holder   = document.getElementById('mbrHolder').value.trim();
+    const rawPhone = document.getElementById('mbrPhone').value.trim();
+    const phone    = (!rawPhone || rawPhone.toUpperCase() === 'NA') ? 'NA' : cleanPhone(rawPhone);
+    const cliCode  = document.getElementById('mbrClientCode').value.trim() || null;
+    const sessions = Math.round(Number(document.getElementById('mbrSessions').value) || 0);
+    const amt      = Math.round(Number(document.getElementById('mbrAmt').value) || 0);
+    const mode     = document.getElementById('mbrPayMode').value;
+    const expires  = document.getElementById('mbrExpires').value || null;
+    const notes    = document.getElementById('mbrNotes').value.trim() || null;
+
+    if (!holder)              { alert('Enter the holder name.'); return; }
+    if (!sessions || sessions < 1) { alert('Enter the number of sessions (minimum 1).'); return; }
+    if (phone !== 'NA' && rawPhone && !PHONE_RE.test(phone)) {
+        alert('Enter a valid 10-digit phone, leave blank, or type NA.'); return;
+    }
+
+    btn.disabled = true; btn.innerText = 'Saving…';
+    const branchId = await expResolveBranchUuid(branchCode);
+    if (!branchId) {
+        btn.disabled = false; btn.innerText = 'Save Package';
+        alert('Could not resolve branch ID.'); return;
+    }
+
+    const { data, error } = await sb.rpc('create_membership', {
+        p_branch_id: branchId, p_kind: kind, p_holder_name: holder,
+        p_phone: phone, p_total_sessions: sessions,
+        p_amount_paid: amt, p_payment_mode: mode,
+        p_notes: notes, p_expires_on: expires || null,
+        p_code: code, p_client_code: cliCode
+    });
+    btn.disabled = false; btn.innerText = 'Save Package';
+
+    if (error) { alert('Could not save: ' + error.message); return; }
+    const why = {
+        forbidden: 'No permission to create memberships.',
+        invalid_kind: 'Choose Membership or Gift Certificate.',
+        invalid_sessions: 'Sessions must be a positive number.',
+        invalid_amount: 'Amount cannot be negative.',
+        invalid_payment_mode: 'Invalid payment mode selected.',
+        invalid_name: 'Enter the holder name.',
+        code_exists: 'A membership with that code already exists. Use a different code.'
+    }[data && data.status];
+    if (why) { alert(why); return; }
+    if (!data || data.status !== 'ok') { alert('Unexpected result: ' + JSON.stringify(data)); return; }
+
+    alert('Saved! Code: ' + data.code);
+    ['mbrHolder','mbrPhone','mbrClientCode','mbrSessions','mbrAmt','mbrCode','mbrNotes','mbrExpires'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.value = '';
+    });
+    document.getElementById('mbrAddForm').classList.add('hidden');
+    // Refresh the client card if one is open
+    const codeEl = document.getElementById('aClientCode');
+    if (codeEl && /^\d{4}$/.test(codeEl.value.trim())) aLookupClientByCode(codeEl.value.trim());
+}
 

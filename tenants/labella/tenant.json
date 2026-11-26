@@ -54,12 +54,13 @@
 
   "rules": {
     "openMin": 660,
-    "closeMin": 1380,
+    "closeMin": 1470,
     "slotStep": 30,
-    "bufferMins": 15,
+    "bufferMins": 5,
     "leadMins": 30,
     "holdMinutes": 7,
     "bookingDays": 7,
-    "therapistMax": 20
+    "therapistMax": 40,
+    "digitalGstPercent": 5
   }
 }

@@ -53,7 +53,7 @@ const FEATURE_KEYS = ['addons', 'roomAssign', 'adjustSession'];
 function validate(t, catalog) {
   const errs = [];
   const need = (cond, msg) => { if (!cond) errs.push(msg); };
-  const isMin = v => Number.isInteger(v) && v >= 0 && v <= 1440;
+  const isMin = v => Number.isInteger(v) && v >= 0 && v <= 1470;
 
   for (const k of ['slug', 'lang', 'defaultMenu', 'brand', 'colors', 'seo', 'labels', 'locale', 'rules'])
     need(t[k] !== undefined, `tenant.json missing "${k}"`);
@@ -67,6 +67,9 @@ function validate(t, catalog) {
     need(get(t, 'locale.' + k), `locale.${k} is required`);
   for (const k of ['slotStep', 'bufferMins', 'leadMins', 'holdMinutes', 'bookingDays', 'therapistMax'])
     need(Number.isInteger(get(t, 'rules.' + k)) && get(t, 'rules.' + k) > 0, `rules.${k} must be a positive integer`);
+  if (t.rules && t.rules.digitalGstPercent !== undefined)
+    need(typeof t.rules.digitalGstPercent === 'number' && t.rules.digitalGstPercent >= 0 && t.rules.digitalGstPercent <= 100,
+      'rules.digitalGstPercent must be a number 0-100');
   need(isMin(get(t, 'rules.openMin')) && isMin(get(t, 'rules.closeMin')) && t.rules.openMin < t.rules.closeMin,
     'rules.openMin / rules.closeMin must be minutes-since-midnight with open < close');
   for (const p of ['brand', 'sand']) need(t.colors && t.colors[p], `colors.${p} palette is required`);
